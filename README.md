@@ -1,0 +1,2 @@
+# Genshin Teams
+
