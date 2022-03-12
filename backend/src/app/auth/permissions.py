@@ -29,7 +29,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
         )
     except JWTError:
         raise credentials_error
-    user = await user_service.get_object_or_none(pk=user_id)
+    user = await user_service.get_object_or_404(pk=user_id)
     return user
 
 
