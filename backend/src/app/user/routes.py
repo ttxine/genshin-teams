@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.app.auth.models import User
 from src.app.user.schemas import UserOut, UserUpdate

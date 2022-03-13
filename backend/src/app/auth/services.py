@@ -10,15 +10,14 @@ from src.core.security import get_password_hash, verify_password
 
 
 async def register_user(schema: UserCreate):
-    # username_exists = await user_service.exists(username=schema.username)
-    # email_exists = await user_service.exists(email=schema.email)
-    # if username_exists or email_exists:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail='User with these credentials exists'
-    #     )
-    # user = await user_service.create(schema)
-    user = await user_service.get_object_or_404(pk=3)
+    username_exists = await user_service.exists(username=schema.username)
+    email_exists = await user_service.exists(email=schema.email)
+    if username_exists or email_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='User with these credentials exists'
+        )
+    user = await user_service.create(schema)
     await send_email_confirmation(user)
 
 
