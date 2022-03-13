@@ -20,6 +20,10 @@ class UserService(BaseService):
         os.makedirs(directory, exist_ok=True)
         return '{0}{1}'.format(directory, file_name)
 
+    async def confirm(self, pk: int):
+        user: User = await self.get_object_or_404(pk=pk)
+        await user.update(email_confirmed=True)
+
     async def update(self, schema: UserUpdate, **kwargs):
         avatar = schema.avatar
         if avatar:

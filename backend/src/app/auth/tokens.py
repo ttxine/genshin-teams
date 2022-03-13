@@ -50,6 +50,10 @@ class Token:
             raise JWTError('Token hasn\'t subject')
         return int(sub)
 
+    @property
+    def user_id(self):
+        return self._get_sub()
+
     async def verify(self):
         self.validate_token_type()
         await self.check_blacklist()
@@ -85,18 +89,10 @@ class AccessToken(Token):
     token_type: str = settings.ACCESS_TOKEN_TYPE
     secret_key: str = settings.ACCESS_TOKEN_SECRET_KEY
 
-    @property
-    def user_id(self):
-        return self._get_sub()
-
 
 class RefreshToken(Token):
     token_type: str = settings.REFRESH_TOKEN_TYPE
     secret_key: str = settings.REFRESH_TOKEN_SECRET_KEY
-
-    @property
-    def user_id(self):
-        return self._get_sub()
 
     def refresh_access_token(self):
         self.validate_token_type()
@@ -105,16 +101,9 @@ class RefreshToken(Token):
 
 
 class EmailConfirmationToken(Token):
-    token_type: str = 'econfirm'
-
-    @property
-    def email(self):
-        return self._get_email()
+    token_type: str = settings.EMAIL_CONFIRMATION_TOKEN_TYPE
+    secret_key: str = settings.EMAIL_CONFIRMATION_TOKEN_SECRET_KEY
 
 
 class PasswordResetToken(Token):
     token_type: str = 'preset'
-
-    @property
-    def email(self):
-        return self._get_email()

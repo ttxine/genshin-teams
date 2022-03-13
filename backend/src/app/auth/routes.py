@@ -1,22 +1,21 @@
 from fastapi import APIRouter, Security
 from fastapi.security import HTTPAuthorizationCredentials
 
-from src.app.auth.models import User
 from src.app.auth.schemas import AuthTokens, AuthUser, AccessToken as AccessTokenSchema, ChangePassword
 from src.app.auth.tokens import AccessToken
 from src.app.base.schemas import Message
 from src.app.user.schemas import UserCreate
-from src.app.auth.services import authenticate_user, change_user_password, refresh_access_token, register_user
+from src.app.auth.services import authenticate_user, change_user_password, confirm_user_email, refresh_access_token, register_user
 from src.app.auth.jwt import generate_access_token, generate_refresh_token
-from src.app.auth.permissions import security, get_current_active_user
+from src.app.auth.permissions import security
 
 auth_router = APIRouter(tags=['auth'])
 
 
-@auth_router.post('/register', response_model=User, status_code=201)
+@auth_router.post('/register', response_model=Message, status_code=201)
 async def register(user_in: UserCreate):
-    user = await register_user(user_in)
-    return user
+    await register_user(user_in)
+    return Message(msg='Email confirmation has been sent')
 
 
 @auth_router.post('/token', response_model=AuthTokens)
@@ -57,3 +56,9 @@ async def change_password(
     token = credentials.credentials
     await change_user_password(token, passwords.old_password, passwords.new_password)
     return Message(msg='Password changed successfully')
+
+
+@auth_router.post('/confirm-email', response_model=Message)
+async def confirm_email(token: str):
+    await confirm_user_email(token)
+    return Message(msg='Email confirmed successfully')

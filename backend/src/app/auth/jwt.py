@@ -51,3 +51,17 @@ def generate_refresh_token(
         settings.REFRESH_TOKEN_SECRET_KEY,
         algorithm
     )
+
+
+def generate_email_confirmation_token(
+    user_id: int,
+    algorithm: str = settings.ALGORITHM
+):
+    lifetime = timedelta(minutes=settings.EMAIL_CONFIRMATION_TOKEN_EXPIRE_MINUTES)
+    return _generate_typed_token(
+        str(user_id),
+        settings.EMAIL_CONFIRMATION_TOKEN_TYPE,
+        lifetime,
+        settings.EMAIL_CONFIRMATION_TOKEN_SECRET_KEY,
+        algorithm
+    )

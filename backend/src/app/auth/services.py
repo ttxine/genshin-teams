@@ -1,22 +1,25 @@
 from fastapi import HTTPException, status
 from jose import JWTError, ExpiredSignatureError
 
-from src.app.auth.tokens import AccessToken, RefreshToken
+from src.app.auth.tokens import AccessToken, EmailConfirmationToken, RefreshToken
+from src.app.base.utils.send_mail import send_email_confirmation
+from src.app.user.models import User
 from src.app.user.services import user_service
 from src.app.user.schemas import UserCreate
 from src.core.security import get_password_hash, verify_password
 
 
 async def register_user(schema: UserCreate):
-    username_exists = await user_service.exists(username=schema.username)
-    email_exists = await user_service.exists(email=schema.email)
-    if username_exists or email_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='User with these credentials exists'
-        )
-    user = await user_service.create(schema)
-    return user
+    # username_exists = await user_service.exists(username=schema.username)
+    # email_exists = await user_service.exists(email=schema.email)
+    # if username_exists or email_exists:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail='User with these credentials exists'
+    #     )
+    # user = await user_service.create(schema)
+    user = await user_service.get_object_or_404(pk=3)
+    await send_email_confirmation(user)
 
 
 async def authenticate_user(username: str, raw_password: str):
@@ -77,3 +80,18 @@ async def refresh_access_token(token: str):
     except JWTError:
         raise credentials_error
     return {'access_token': token}
+
+
+async def confirm_user_email(token: str):
+    try:
+        email_confirmation_token = EmailConfirmationToken(token)
+        await email_confirmation_token.verify()
+        user_id = email_confirmation_token.user_id
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Could not validate credentials',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+    await email_confirmation_token.blacklist()
+    await user_service.confirm(pk=user_id)
