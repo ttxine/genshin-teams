@@ -7,7 +7,7 @@ from src.config import settings
 
 
 def _generate_typed_token(
-    subject: dict,
+    subject: str,
     token_type: str,
     lifetime: timedelta,
     secret: str,
@@ -63,5 +63,19 @@ def generate_email_confirmation_token(
         settings.EMAIL_CONFIRMATION_TOKEN_TYPE,
         lifetime,
         settings.EMAIL_CONFIRMATION_TOKEN_SECRET_KEY,
+        algorithm
+    )
+
+
+def generate_password_reset_token(
+    user_id: int,
+    algorithm: str = settings.ALGORITHM
+):
+    lifetime = timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
+    return _generate_typed_token(
+        str(user_id),
+        settings.PASSWORD_RESET_TOKEN_TYPE,
+        lifetime,
+        settings.PASSWORD_RESET_TOKEN_SECRET_KEY,
         algorithm
     )

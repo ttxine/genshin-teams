@@ -14,6 +14,9 @@ class AuthTokens(AccessToken):
     refresh_token: str
 
 
-class ChangePassword(BaseModel):
-    old_password: str
+class PasswordReset(BaseModel):
     new_password: str
+
+
+class PasswordChange(PasswordReset):
+    old_password: str

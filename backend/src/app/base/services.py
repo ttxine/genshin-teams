@@ -31,7 +31,7 @@ class BaseService:
     async def get(self, **kwargs) -> GetSchema:
         return await self.model.objects.get(**kwargs)
 
-    async def get_object_or_404(self, **kwargs) -> GetSchema | HTTPException:
+    async def get_object_or_404(self, **kwargs) -> GetSchema:
         obj = await self.model.objects.get_or_none(**kwargs)
         if not obj:
             raise HTTPException(

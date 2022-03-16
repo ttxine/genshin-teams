@@ -1,7 +1,7 @@
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail
 from pydantic import EmailStr
 
-from src.app.auth.jwt import generate_email_confirmation_token
+from src.app.auth.jwt import generate_email_confirmation_token, generate_password_reset_token
 from src.app.user.models import User
 from src.config.settings import SITE_DOMAIN
 
@@ -19,7 +19,7 @@ conf = ConnectionConfig(
 )
 
 
-async def send_mail(email: EmailStr, subject: str, body: dict, template_name: str):
+async def _send_mail(email: EmailStr, subject: str, body: dict, template_name: str):
     message = MessageSchema(
         recipients=[email],
         subject=subject,
@@ -34,18 +34,15 @@ async def send_mail(email: EmailStr, subject: str, body: dict, template_name: st
 async def send_email_confirmation(user: User):
     token = generate_email_confirmation_token(user.id)
     body = {
-        'title': '[Genshin Teams] Confirm E-mail',
         'username': user.username,
         'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
     }
-    await send_mail(user.email, 'Email Confirmation', body, 'email_confirmation.html')
+    await _send_mail(user.email, '[Genshin Teams] Confirm E-mail', body, 'email_confirmation.html')
 
 
-# async def send_password_reset(email: EmailStr):
-#     token = create_password_reset_token(email)
-#     body = {
-#         'title': 'FastAPI Password Reset',
-#         'site_domain': SITE_DOMAIN,
-#         'confirm_url': '{0}/reset-password/?token={1}'.format(SITE_DOMAIN, token)
-#     }
-#     await send_mail(email, 'Password Reset', body)
+async def send_password_reset(user: User):
+    token = generate_password_reset_token(user.id)
+    body = {
+        'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
+    }
+    await _send_mail(user.email, '[Genshin Teams] Password Reset', body, 'password_reset.html')
