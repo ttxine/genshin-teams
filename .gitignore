@@ -3,5 +3,7 @@
 
 __pycache__
 venv
-media
+!/backend/media/
+/backend/media/*
+!/backend/media/.gitkeep
 *.sqlite
