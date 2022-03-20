@@ -1,13 +1,29 @@
-import email
-from fastapi import BackgroundTasks, HTTPException, status
+from datetime import datetime
+from typing import Type
+
+from fastapi import BackgroundTasks, HTTPException, Request, Response, status
 from jose import JWTError, ExpiredSignatureError
 
-from src.app.auth.tokens import AccessToken, EmailConfirmationToken, PasswordResetToken, RefreshToken
-from src.app.base.utils.send_mail import send_email_confirmation, send_password_reset
+from src.core.security import get_password_hash, verify_password
 from src.app.user.models import User
 from src.app.user.services import user_service
 from src.app.user.schemas import UserCreate
-from src.core.security import get_password_hash, verify_password
+from src.app.auth.jwt import generate_refresh_token
+from src.app.auth.exceptions import CredentialsException, InvalidTokenException, TokenExpiredException
+from src.app.auth.tokens import AccessToken, EmailConfirmationToken, PasswordResetToken, RefreshToken, Token
+from src.app.base.utils.send_mail import send_email_confirmation, send_password_reset
+
+
+async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int, AccessToken]:
+    try:
+        token = token_class(raw_token)
+        await token.verify()
+        user_id = token.user_id
+    except ExpiredSignatureError:
+        raise TokenExpiredException()
+    except JWTError:
+        raise InvalidTokenException()
+    return user_id, token
 
 
 async def register_user(schema: UserCreate, task: BackgroundTasks) -> None:
@@ -24,76 +40,76 @@ async def register_user(schema: UserCreate, task: BackgroundTasks) -> None:
     )
 
 
-async def authenticate_user(username: str, raw_password: str):
-    user = await user_service.get_object_or_404(username=username)
+async def authenticate_user(username: str, raw_password: str) -> User:
+    user: User = await user_service.get_object_or_none(username=username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if not verify_password(raw_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Wrong password',
-            headers={'WWW-Authenticate': 'Bearer'}
+            detail='Wrong password'
+        )
+    if not user.email_confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Email not confirmed'
         )
     return user
 
 
+async def logout_user(token: str, request: Request, response: Response) -> None:
+    _, access_token = await validate_token(token, AccessToken, )
+
+    refresh_token_cookie = request.cookies.get('rt')
+    _, refresh_token = await validate_token(refresh_token_cookie, RefreshToken)
+
+    await access_token.blacklist()
+    await refresh_token.blacklist()
+
+    response.delete_cookie(key='rt', secure=True, httponly=True)
+
+
+async def logout_user_from_all_devices(token: str) -> None:
+    user_id, _ = await validate_token(token, AccessToken)
+    user = await user_service.get_object_or_404(pk=user_id)
+
+    await user.update(invalidate_before=datetime.utcnow())
+
+
 async def change_user_password(token: str, old_raw_password: str, new_raw_password: str) -> None:
-    try:
-        access_token = AccessToken(token)
-        await access_token.verify()
-        user_id = access_token.user_id
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Token expired',
-            headers={'WWW-Authenticate': 'Bearer'}
-        )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail='Could not validate credentials',
-            headers={'WWW-Authenticate': 'Bearer'}
-        )
+    user_id, access_token = await validate_token(token, AccessToken)
     user = await user_service.get_object_or_404(pk=user_id)
     if not verify_password(old_raw_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Wrong old password',
-            headers={'WWW-Authenticate': 'Bearer'}
+            detail='Wrong old password'
         )
     new_hashed_password = get_password_hash(new_raw_password)
     await access_token.blacklist()
-    await user.update(hashed_password=new_hashed_password)
-
-
-async def refresh_access_token(token: str):
-    credentials_error = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail='Could not validate credentials',
-        headers={'WWW-Authenticate': 'Bearer'}
+    await user.update(
+        hashed_password=new_hashed_password,
+        invalidate_before=datetime.utcnow()
     )
-    try:
-        refresh_token = RefreshToken(token)
-        token = refresh_token.refresh_access_token()
-    except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Token expired',
-            headers={'WWW-Authenticate': 'Bearer'}
-        )
-    except JWTError:
-        raise credentials_error
-    return {'access_token': token}
 
 
-async def confirm_user_email(token: str):
-    try:
-        email_confirmation_token = EmailConfirmationToken(token)
-        await email_confirmation_token.verify()
-        user_id = email_confirmation_token.user_id
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail='Could not validate credentials'
-        )
+async def refresh_access_token(token: str, response: Response) -> dict:
+    user_id, refresh_token = await validate_token(token, RefreshToken)
+
+    access_token = refresh_token.refresh_access_token()
+
+    await refresh_token.blacklist()
+    new_refresh_token = generate_refresh_token(user_id)
+
+    response.set_cookie(key='rt', value=new_refresh_token, httponly=True, secure=True)
+    return {'access_token': access_token}
+
+
+async def confirm_user_email(token: str) -> None:
+    user_id, email_confirmation_token = await validate_token(token, EmailConfirmationToken)
     await email_confirmation_token.blacklist()
     await user_service.confirm(pk=user_id)
 
@@ -106,16 +122,19 @@ async def recover_user_password(email: str, task: BackgroundTasks) -> None:
 
 
 async def reset_user_password(token: str, new_raw_password: str) -> None:
-    try:
-        password_reset_token = PasswordResetToken(token)
-        await password_reset_token.verify()
-        user_id = password_reset_token.user_id
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail='Could not validate credentials'
-        )
+    user_id, password_reset_token = await validate_token(token, PasswordResetToken)
     await password_reset_token.blacklist()
     user: User = await user_service.get_object_or_404(pk=user_id)
     new_hashed_password = get_password_hash(new_raw_password)
-    await user.update(hashed_password=new_hashed_password)
+    await user.update(
+        hashed_password=new_hashed_password,
+        invalidate_before=datetime.utcnow()
+    )
+
+
+def get_refresh_token_from_cookie(request: Request) -> str:
+    try:
+        refresh_token = request.cookies['rt']
+    except KeyError:
+        raise CredentialsException()
+    return refresh_token

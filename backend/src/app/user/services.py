@@ -13,12 +13,12 @@ class UserService(BaseService):
     update_schema = UserUpdate
 
     @staticmethod
-    def _get_avatar_upload_path(file_name: str) -> str:
+    def _get_avatar_upload_path() -> str:
         directory = 'media/img/users/avatars/{}/'.format(
             str(int(datetime.utcnow().strftime('%d%m%Y'))),
         )
         os.makedirs(directory, exist_ok=True)
-        return '{0}{1}'.format(directory, file_name)
+        return directory
 
     async def confirm(self, pk: int):
         user: User = await self.get_object_or_404(pk=pk)
@@ -27,16 +27,17 @@ class UserService(BaseService):
     async def update(self, schema: UserUpdate, **kwargs):
         avatar = schema.avatar
         if avatar:
-            upload_path = self._get_avatar_upload_path(avatar.filename)
-            await self._upload_file(upload_path, avatar)
-            schema.avatar = upload_path
+            upload_path = self._get_avatar_upload_path()
+            image_path = self._upload_image(upload_path, avatar, (250, 250))
+            schema.avatar = image_path
         return await super().update(schema, pk=kwargs.get('pk'))
 
     async def create(self, schema, **kwargs):
         hashed_password = get_password_hash(schema.password)
         return await super().create(
             **schema.dict(exclude={'password'}),
-            hashed_password=hashed_password
+            hashed_password=hashed_password,
+            **kwargs
         )
 
 

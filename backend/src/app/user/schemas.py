@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     email: EmailStr
 
     @validator('username')
-    def validate_username(cls, v: str):
+    def validate_username(cls, v: str) -> str:
         if v.isdigit():
             raise ValueError('Username can\'t contain only numbers')
         if not re.match(r'^[\w.@+-]+\Z', v):
@@ -29,5 +29,6 @@ class UserUpdate(BaseModel):
 UserOut = User.get_pydantic(exclude={
     'hashed_password',
     'is_superuser',
-    'blacklistedtokens'
+    'blacklistedtokens',
+    'invalidate_before'
 })

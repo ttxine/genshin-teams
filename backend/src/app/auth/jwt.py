@@ -13,7 +13,7 @@ def _generate_typed_token(
     secret: str,
     algorithm: str,
     **payload
-):
+) -> str:
     expires_at = datetime.utcnow() + lifetime
 
     to_encode = payload.copy()
@@ -22,13 +22,14 @@ def _generate_typed_token(
     to_encode['token_type'] = token_type
     to_encode['exp'] = expires_at
     to_encode['jti'] = str(uuid4())
+    to_encode['iat'] = datetime.utcnow()
     return jwt.encode(to_encode, secret, algorithm)
 
 
 def generate_access_token(
     user_id: int,
     algorithm: str = settings.ALGORITHM
-):
+) -> str:
     lifetime = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return _generate_typed_token(
         str(user_id),
@@ -42,7 +43,7 @@ def generate_access_token(
 def generate_refresh_token(
     user_id: int,
     algorithm: str = settings.ALGORITHM
-):
+) -> str:
     lifetime = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     return _generate_typed_token(
         str(user_id),
@@ -56,7 +57,7 @@ def generate_refresh_token(
 def generate_email_confirmation_token(
     user_id: int,
     algorithm: str = settings.ALGORITHM
-):
+) -> str:
     lifetime = timedelta(minutes=settings.EMAIL_CONFIRMATION_TOKEN_EXPIRE_MINUTES)
     return _generate_typed_token(
         str(user_id),
@@ -70,7 +71,7 @@ def generate_email_confirmation_token(
 def generate_password_reset_token(
     user_id: int,
     algorithm: str = settings.ALGORITHM
-):
+) -> str:
     lifetime = timedelta(minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
     return _generate_typed_token(
         str(user_id),

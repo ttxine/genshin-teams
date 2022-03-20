@@ -2,6 +2,8 @@ from jose import jwt, JWTError
 
 from src.app.auth.models import BlacklistedToken
 from src.app.auth.jwt import generate_access_token
+from src.app.user.models import User
+from src.app.user.services import user_service
 from src.config import settings
 
 
@@ -39,11 +41,17 @@ class Token:
     def _get_sub(self) -> str:
         return self._get('sub')
 
+    def _get_iat(self) -> str:
+        return self._get('iat')
+
     @property
     def user_id(self) -> int:
         return int(self._get_sub())
 
     async def verify(self) -> None:
+        user: User = await user_service.get_object_or_404(pk=self.user_id)
+        if user.invalidate_before.timestamp() >= self._get_iat():
+            raise JWTError('Invalid token')
         self.validate_token_type()
         await self.check_blacklist()
 
@@ -84,7 +92,6 @@ class RefreshToken(Token):
     secret_key: str = settings.REFRESH_TOKEN_SECRET_KEY
 
     def refresh_access_token(self) -> str:
-        self.validate_token_type()
         user_id = self.user_id
         return generate_access_token(user_id)
 

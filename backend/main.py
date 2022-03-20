@@ -1,7 +1,10 @@
+import asyncio
+import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-import uvicorn
 
+from scripts import createsuperuser, startserver, flushexpiredtokens
+from scripts.exceptions import CommandException
 from src.core.db import database
 from src.app.auth.routes import auth_router
 from src.app.user.routes import user_router
@@ -37,4 +40,21 @@ app.include_router(user_router, prefix='{}users'.format(settings.API_PREFIX))
 
 
 if __name__ == '__main__':
-    uvicorn.run('main:app', reload=True)
+    args = []
+    try:
+        command = sys.argv
+        script = command[1]
+        if len(command) > 2:
+            args.append(sys.argv[2])
+        function = globals()[script]
+        if asyncio.iscoroutinefunction(function):
+            asyncio.run(function(*args))
+        else:
+            function(*args)
+    except IndexError:
+        raise CommandException('No command given')
+    except KeyError:
+        raise CommandException('Invalid command')
+    except KeyboardInterrupt:
+        print('\n\nCommand execution interrupted')
+        sys.exit(0)

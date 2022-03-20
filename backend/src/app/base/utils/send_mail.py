@@ -19,7 +19,7 @@ conf = ConnectionConfig(
 )
 
 
-async def _send_mail(email: EmailStr, subject: str, body: dict, template_name: str):
+async def _send_mail(email: EmailStr, subject: str, body: dict, template_name: str) -> None:
     message = MessageSchema(
         recipients=[email],
         subject=subject,
@@ -31,18 +31,28 @@ async def _send_mail(email: EmailStr, subject: str, body: dict, template_name: s
     await fm.send_message(message, template_name=template_name)
 
 
-async def send_email_confirmation(user: User):
+async def send_email_confirmation(user: User) -> None:
     token = generate_email_confirmation_token(user.id)
     body = {
         'username': user.username,
         'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
     }
-    await _send_mail(user.email, '[Genshin Teams] Confirm E-mail', body, 'email_confirmation.html')
+    await _send_mail(
+        user.email,
+        '[Genshin Teams] Confirm E-mail',
+        body,
+        'email_confirmation.html'
+    )
 
 
-async def send_password_reset(user: User):
+async def send_password_reset(user: User) -> None:
     token = generate_password_reset_token(user.id)
     body = {
         'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
     }
-    await _send_mail(user.email, '[Genshin Teams] Password Reset', body, 'password_reset.html')
+    await _send_mail(
+        user.email,
+        '[Genshin Teams] Password Reset',
+        body,
+        'password_reset.html'
+    )
