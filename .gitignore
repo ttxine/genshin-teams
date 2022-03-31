@@ -7,3 +7,4 @@ venv
 /backend/media/*
 !/backend/media/.gitkeep
 *.sqlite
+.env

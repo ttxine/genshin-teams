@@ -1,7 +1,6 @@
 import asyncio
-from operator import ge
 import sys
-from fastapi import FastAPI, Form
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from scripts import createsuperuser, startserver, flushexpiredtokens

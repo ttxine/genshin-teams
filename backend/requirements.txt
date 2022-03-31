@@ -1,3 +1,4 @@
+aenum==3.1.8
 aiofiles==0.8.0
 aioredis==2.0.1
 aiosmtplib==1.1.6
@@ -38,6 +39,7 @@ pyasn1==0.4.8
 pycparser==2.21
 pydantic==1.9.0
 pyparsing==3.0.7
+python-dotenv==0.20.0
 python-jose==3.3.0
 python-multipart==0.0.5
 redis==4.1.4
