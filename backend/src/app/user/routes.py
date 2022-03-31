@@ -6,7 +6,7 @@ from src.app.user.services import user_service
 from src.app.auth.permissions import get_current_active_user
 
 
-user_router = APIRouter(tags=['user'])
+user_router = APIRouter(tags=['User'])
 
 
 @user_router.get('/me', response_model=UserOut)

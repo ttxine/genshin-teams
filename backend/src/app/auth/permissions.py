@@ -1,5 +1,5 @@
 from jose import JWTError, ExpiredSignatureError
-from fastapi import HTTPException, Security, Depends, status
+from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from src.app.auth.exceptions import CredentialsException, TokenExpiredException
 
@@ -27,10 +27,19 @@ async def get_current_user(
     return user
 
 
-def get_current_active_user(user: User = Depends(get_current_user)) -> User:
+def get_current_active_user(user: User = Security(get_current_user)) -> User:
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Inactive user',
+            detail='Current user is inactive',
+        )
+    return user
+
+
+def get_current_superuser(user: User = Security(get_current_user)) -> User:
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Forbidden for current user'
         )
     return user

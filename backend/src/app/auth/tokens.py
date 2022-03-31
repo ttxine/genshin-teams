@@ -11,14 +11,14 @@ class Token:
 
     __slots__ = 'token', 'payload'
 
-    token_type: str
-    secret_key: str
+    _token_type: str
+    _secret_key: str
 
     def __init__(self, token: str) -> None:
         self.token = token
         self.payload = jwt.decode(
             token,
-            self.secret_key,
+            self._secret_key,
             settings.ALGORITHM
         )
 
@@ -57,7 +57,7 @@ class Token:
 
     def validate_token_type(self) -> None:
         token_type = self._get_token_type()
-        if self.token_type != token_type:
+        if self._token_type != token_type:
             raise JWTError('Invalid token type')
 
     async def is_blacklisted(self) -> bool:
@@ -83,13 +83,13 @@ class Token:
 
 
 class AccessToken(Token):
-    token_type: str = settings.ACCESS_TOKEN_TYPE
-    secret_key: str = settings.ACCESS_TOKEN_SECRET_KEY
+    _token_type: str = settings.ACCESS_TOKEN_TYPE
+    _secret_key: str = settings.ACCESS_TOKEN_SECRET_KEY
 
 
 class RefreshToken(Token):
-    token_type: str = settings.REFRESH_TOKEN_TYPE
-    secret_key: str = settings.REFRESH_TOKEN_SECRET_KEY
+    _token_type: str = settings.REFRESH_TOKEN_TYPE
+    _secret_key: str = settings.REFRESH_TOKEN_SECRET_KEY
 
     def refresh_access_token(self) -> str:
         user_id = self.user_id
@@ -97,10 +97,10 @@ class RefreshToken(Token):
 
 
 class EmailConfirmationToken(Token):
-    token_type: str = settings.EMAIL_CONFIRMATION_TOKEN_TYPE
-    secret_key: str = settings.EMAIL_CONFIRMATION_TOKEN_SECRET_KEY
+    _token_type: str = settings.EMAIL_CONFIRMATION_TOKEN_TYPE
+    _secret_key: str = settings.EMAIL_CONFIRMATION_TOKEN_SECRET_KEY
 
 
 class PasswordResetToken(Token):
-    token_type: str = settings.PASSWORD_RESET_TOKEN_TYPE
-    secret_key: str = settings.PASSWORD_RESET_TOKEN_SECRET_KEY
+    _token_type: str = settings.PASSWORD_RESET_TOKEN_TYPE
+    _secret_key: str = settings.PASSWORD_RESET_TOKEN_SECRET_KEY

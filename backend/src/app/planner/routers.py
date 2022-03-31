@@ -1,0 +1,12 @@
+from fastapi import APIRouter
+from src.app.planner.routes import weapons
+
+
+weapon_router = APIRouter()
+weapon_router.include_router(weapons.weapon_main_stat_level_multiplier_router)
+weapon_router.include_router(weapons.weapon_sub_stat_level_multiplier_router)
+weapon_router.include_router(weapons.weapon_main_stat_ascension_value_router)
+weapon_router.include_router(weapons.weapon_main_stat_tier_router)
+weapon_router.include_router(weapons.weapon_sub_stat_router)
+weapon_router.include_router(weapons.weapon_passive_ability_router)
+weapon_router.include_router(weapons.weapon_router)

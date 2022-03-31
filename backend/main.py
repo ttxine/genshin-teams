@@ -1,6 +1,7 @@
 import asyncio
+from operator import ge
 import sys
-from fastapi import FastAPI
+from fastapi import FastAPI, Form
 from fastapi.staticfiles import StaticFiles
 
 from scripts import createsuperuser, startserver, flushexpiredtokens
@@ -8,12 +9,13 @@ from scripts.exceptions import CommandException
 from src.core.db import database
 from src.app.auth.routes import auth_router
 from src.app.user.routes import user_router
+from src.app.planner.routers import weapon_router
 from src.config import settings
 
 
 app = FastAPI(
-    docs_url='{}docs'.format(settings.API_PREFIX),
-    redoc_url='{}redoc'.format(settings.API_PREFIX)
+    docs_url='{}docs'.format(settings.API_DEVELOP_PREFIX),
+    redoc_url='{}redoc'.format(settings.API_DEVELOP_PREFIX)
 )
 
 app.mount('/media', StaticFiles(directory='media'), name='media')
@@ -37,6 +39,7 @@ async def shutdown() -> None:
 
 app.include_router(auth_router, prefix='{}auth'.format(settings.API_PREFIX))
 app.include_router(user_router, prefix='{}users'.format(settings.API_PREFIX))
+app.include_router(weapon_router, prefix='{}weapons'.format(settings.API_PREFIX))
 
 
 if __name__ == '__main__':

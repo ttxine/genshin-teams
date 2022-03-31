@@ -1,24 +1,15 @@
-import os
-from datetime import datetime
-
-from src.app.base.services import BaseService
+from src.app.base.services import ModelService
+from src.app.base.uploads import get_avatar_upload_path
+from src.app.base.utils.images import upload_image
 from src.app.user.models import User
 from src.app.user.schemas import UserCreate, UserUpdate
 from src.core.security import get_password_hash
 
 
-class UserService(BaseService):
+class UserService(ModelService):
     model = User
     create_schema = UserCreate
     update_schema = UserUpdate
-
-    @staticmethod
-    def _get_avatar_upload_path() -> str:
-        directory = 'media/img/users/avatars/{}/'.format(
-            str(int(datetime.utcnow().strftime('%d%m%Y'))),
-        )
-        os.makedirs(directory, exist_ok=True)
-        return directory
 
     async def confirm(self, pk: int):
         user: User = await self.get_object_or_404(pk=pk)
@@ -27,8 +18,8 @@ class UserService(BaseService):
     async def update(self, schema: UserUpdate, **kwargs):
         avatar = schema.avatar
         if avatar:
-            upload_path = self._get_avatar_upload_path()
-            image_path = self._upload_image(upload_path, avatar, (250, 250))
+            upload_path = get_avatar_upload_path()
+            image_path = upload_image(upload_path, avatar, (250, 250))
             schema.avatar = image_path
         return await super().update(schema, pk=kwargs.get('pk'))
 

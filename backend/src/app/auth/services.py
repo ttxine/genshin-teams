@@ -53,7 +53,7 @@ async def authenticate_user(username: str, raw_password: str) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Wrong password'
         )
-    if not user.email_confirmed:
+    if not user.email_confirmed and not user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Email not confirmed'
