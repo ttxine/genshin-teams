@@ -120,3 +120,14 @@ class StatType(EnumLabelsMixin, Enum):
     CONSTANT = 'const', 'Constant'
     INSTANT = 'inst', 'Instant'
     CONDITIONAL = 'cond', 'Conditional'
+
+
+class ArtifactType(EnumLabelsMixin, Enum):
+
+    _init_ = 'value string'
+
+    FLOWER = 'flower', 'Flower of Life'
+    PLUME_OF_DEATH = 'plume', 'Plume of Death'
+    SANDS_OF_EON = 'sands', 'Sands of Eon'
+    GOBLET_OF_EONOTHEM = 'goblet', ' Goblet of Eonothem'
+    CIRCLET_OF_LOGOS = 'circlet', 'Circlet of Logos'

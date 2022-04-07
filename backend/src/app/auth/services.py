@@ -14,7 +14,7 @@ from src.app.auth.tokens import AccessToken, EmailConfirmationToken, PasswordRes
 from src.app.base.utils.send_mail import send_email_confirmation, send_password_reset
 
 
-async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int, AccessToken]:
+async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int, Token]:
     try:
         token = token_class(raw_token)
         await token.verify()
@@ -42,16 +42,11 @@ async def register_user(schema: UserCreate, task: BackgroundTasks) -> None:
 
 async def authenticate_user(username: str, raw_password: str) -> User:
     user: User = await user_service.get_object_or_none(username=username)
-    if not user:
+    if not user or not verify_password(raw_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username",
+            detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not verify_password(raw_password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Wrong password'
         )
     if not user.email_confirmed and not user.is_superuser:
         raise HTTPException(
@@ -62,7 +57,7 @@ async def authenticate_user(username: str, raw_password: str) -> User:
 
 
 async def logout_user(token: str, request: Request, response: Response) -> None:
-    _, access_token = await validate_token(token, AccessToken, )
+    _, access_token = await validate_token(token, AccessToken)
 
     refresh_token_cookie = request.cookies.get('rt')
     _, refresh_token = await validate_token(refresh_token_cookie, RefreshToken)

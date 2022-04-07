@@ -28,7 +28,7 @@ class ModelService:
         return await self.model.objects.get(**kwargs)
 
     async def get_object_or_none(self, **kwargs) -> Type[Model] | None:
-        return await self.model.objects.get_or_none(**kwargs)
+        return await self.model.objects.select_all(follow=True).get_or_none(**kwargs)
 
     async def get_object_or_404(self, **kwargs) -> GetSchema:
         obj = await self.get_object_or_none(**kwargs)
@@ -42,35 +42,27 @@ class ModelService:
             )
         return self.get_schema(**obj.dict())
 
-    async def filter(self, limit: int | None = None, **kwargs) -> list[GetSchema] | None:
-        qs = await self.model.objects.filter(**kwargs)
+    def filter(self, limit: int | None = None, **kwargs) -> list[GetSchema] | None:
+        qs = self.model.objects.select_all(follow=True).filter(**kwargs)
         if limit:
             return qs[:limit]
         else:
             return qs
 
     async def all(self, limit: int | None = None) -> list[GetSchema] | None:
-        qs = await self.model.objects.select_all().all()
+        qs = await self.model.objects.select_all(follow=True).all()
         if limit:
             return qs[:limit]
         else:
             return qs
 
-    async def create(
-        self,
-        schema: CreateSchema | None = None,
-        **kwargs
-    ) -> GetSchema:
+    async def create(self, schema: CreateSchema | None = None, **kwargs) -> GetSchema:
         if schema:
             model = await self._pre_save(schema)
             kwargs.update(model)
         return await self.model.objects.create(**kwargs)
 
-    async def update(
-        self,
-        schema: UpdateSchema,
-        **kwargs
-    ) -> GetSchema:
+    async def update(self, schema: UpdateSchema, **kwargs) -> GetSchema:
         obj = await self.get_object_or_404(**kwargs)
         model = await self._pre_save(schema)
         return await obj.update(**model)
@@ -81,9 +73,5 @@ class ModelService:
     async def exists(self, **kwargs) -> bool:
         return await self.model.objects.filter(**kwargs).exists()
 
-    async def _pre_save(
-        self,
-        schema: CreateSchema | UpdateSchema,
-        exclude_none: bool = True
-    ) -> dict[str, Any]:
+    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
         return schema.dict(exclude_unset=True, exclude_none=exclude_none)

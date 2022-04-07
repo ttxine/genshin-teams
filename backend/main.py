@@ -3,7 +3,7 @@ import sys
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from scripts import createsuperuser, startserver, flushexpiredtokens
+from scripts import createsuperuser, startserver, flushexpiredtokens, loadgenshindata
 from scripts.exceptions import CommandException
 from src.core.db import database
 from src.app.auth.routes import auth_router

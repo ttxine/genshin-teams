@@ -1,8 +1,8 @@
 """add weapon
 
-Revision ID: e01a6ada5292
+Revision ID: a48260077fe2
 Revises: ac9bb6ea5480
-Create Date: 2022-03-30 11:35:32.690551
+Create Date: 2022-04-03 20:20:41.370038
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e01a6ada5292'
+revision = 'a48260077fe2'
 down_revision = 'ac9bb6ea5480'
 branch_labels = None
 depends_on = None
@@ -25,19 +25,20 @@ def upgrade():
     sa.Column('ascension_value', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('weapon_main_stat_cores',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('rarity', sa.SmallInteger(), nullable=False),
+    sa.Column('start_value', sa.Float(), nullable=False),
+    sa.Column('tier', sa.SmallInteger(), nullable=False),
+    sa.Column('is_exception', sa.Boolean(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('weapon_main_stat_level_multipliers',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('rarity', sa.SmallInteger(), nullable=False),
     sa.Column('tier', sa.SmallInteger(), nullable=False),
     sa.Column('level', sa.SmallInteger(), nullable=False),
     sa.Column('multiplier', sa.Float(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('weapon_main_stat_tiers',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('rarity', sa.SmallInteger(), nullable=False),
-    sa.Column('start_value', sa.Float(), nullable=False),
-    sa.Column('tier', sa.SmallInteger(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('weapon_passive_ability_cores',
@@ -62,17 +63,28 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('rarity', sa.SmallInteger(), nullable=False),
-    sa.Column('main_stat_start_value', sa.Float(), nullable=False),
+    sa.Column('main_stat_core', sa.Integer(), nullable=False),
     sa.Column('sub_stat_core', sa.Integer(), nullable=False),
     sa.Column('weapon_type', sa.String(length=2), nullable=False),
     sa.Column('first_ascension_image', sa.String(length=255), nullable=False),
     sa.Column('second_ascension_image', sa.String(length=255), nullable=True),
     sa.Column('passive_ability_core', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['main_stat_core'], ['weapon_main_stat_cores.id'], name='fk_weapon_cores_weapon_main_stat_cores_id_main_stat_core'),
     sa.ForeignKeyConstraint(['passive_ability_core'], ['weapon_passive_ability_cores.id'], name='fk_weapon_cores_weapon_passive_ability_cores_id_passive_ability_core'),
     sa.ForeignKeyConstraint(['sub_stat_core'], ['weapon_sub_stat_cores.id'], name='fk_weapon_cores_weapon_sub_stat_cores_id_sub_stat_core'),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('main_stat_core'),
     sa.UniqueConstraint('passive_ability_core'),
     sa.UniqueConstraint('sub_stat_core')
+    )
+    op.create_table('weapon_main_stats',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('core', sa.Integer(), nullable=False),
+    sa.Column('level', sa.SmallInteger(), nullable=False),
+    sa.Column('ascension', sa.SmallInteger(), nullable=False),
+    sa.Column('value', sa.Float(), nullable=False),
+    sa.ForeignKeyConstraint(['core'], ['weapon_main_stat_cores.id'], name='fk_weapon_main_stats_weapon_main_stat_cores_id_core'),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('weapon_passive_abilities',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -97,6 +109,7 @@ def upgrade():
     op.create_table('weapon_sub_stats',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('core', sa.Integer(), nullable=False),
+    sa.Column('level', sa.SmallInteger(), nullable=False),
     sa.Column('value', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['core'], ['weapon_sub_stat_cores.id'], name='fk_weapon_sub_stats_weapon_sub_stat_cores_id_core'),
     sa.PrimaryKeyConstraint('id')
@@ -114,11 +127,12 @@ def upgrade():
     sa.Column('core', sa.Integer(), nullable=False),
     sa.Column('level', sa.SmallInteger(), nullable=False),
     sa.Column('ascension', sa.SmallInteger(), nullable=False),
-    sa.Column('main_stat_value', sa.Float(), nullable=False),
+    sa.Column('main_stat', sa.Integer(), nullable=False),
     sa.Column('sub_stat', sa.Integer(), nullable=False),
     sa.Column('refinement', sa.SmallInteger(), nullable=False),
     sa.Column('passive_ability', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['core'], ['weapon_cores.id'], name='fk_weapons_weapon_cores_id_core'),
+    sa.ForeignKeyConstraint(['main_stat'], ['weapon_main_stats.id'], name='fk_weapons_weapon_main_stats_id_main_stat'),
     sa.ForeignKeyConstraint(['passive_ability'], ['weapon_passive_abilities.id'], name='fk_weapons_weapon_passive_abilities_id_passive_ability'),
     sa.ForeignKeyConstraint(['sub_stat'], ['weapon_sub_stats.id'], name='fk_weapons_weapon_sub_stats_id_sub_stat'),
     sa.PrimaryKeyConstraint('id')
@@ -133,11 +147,12 @@ def downgrade():
     op.drop_table('weapon_sub_stats')
     op.drop_table('weapon_passive_ability_stat_cores')
     op.drop_table('weapon_passive_abilities')
+    op.drop_table('weapon_main_stats')
     op.drop_table('weapon_cores')
     op.drop_table('weapon_sub_stat_level_multipliers')
     op.drop_table('weapon_sub_stat_cores')
     op.drop_table('weapon_passive_ability_cores')
-    op.drop_table('weapon_main_stat_tiers')
     op.drop_table('weapon_main_stat_level_multipliers')
+    op.drop_table('weapon_main_stat_cores')
     op.drop_table('weapon_main_stat_ascension_values')
     # ### end Alembic commands ###

@@ -5,16 +5,6 @@ from src.app.planner.models.attributes import StatCore
 from src.core.db import BaseMeta
 
 # Weapon - Main Stat (Base Attack)
-class WeaponMainStatTier(ormar.Model):
-    class Meta(BaseMeta):
-        tablename: str = 'weapon_main_stat_tiers'
-
-    id: int = ormar.Integer(primary_key=True)
-    rarity: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Rarity))
-    start_value: float = ormar.Float(minimum=0)
-    tier: int = ormar.SmallInteger(minimum=1, maximum=4, choices=list(MultiplierTier))
-
-
 class WeaponMainStatLevelMultiplier(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_main_stat_level_multipliers'
@@ -22,7 +12,7 @@ class WeaponMainStatLevelMultiplier(ormar.Model):
     id: int = ormar.Integer(primary_key=True)
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Rarity))
     tier: int = ormar.SmallInteger(minimum=1, maximum=4, choices=list(MultiplierTier))
-    level: int = ormar.SmallInteger(maximum=90)
+    level: int = ormar.SmallInteger(minimum=1, maximum=90)
     multiplier: float = ormar.Float(minimum=0)
 
 
@@ -35,13 +25,35 @@ class WeaponMainStatAscensionValue(ormar.Model):
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Rarity))
     ascension_value: float = ormar.Float(minimum=0)
 
+
+class WeaponMainStatCore(ormar.Model):
+    class Meta(BaseMeta):
+        tablename: str = 'weapon_main_stat_cores'
+
+    id: int = ormar.Integer(primary_key=True)
+    rarity: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Rarity))
+    start_value: float = ormar.Float(minimum=0)
+    tier: int = ormar.SmallInteger(minimum=1, maximum=4, choices=list(MultiplierTier))
+    is_exception: bool = ormar.Boolean(default=False)
+
+
+class WeaponMainStat(ormar.Model):
+    class Meta(BaseMeta):
+        tablename: str = 'weapon_main_stats'
+
+    id: int = ormar.Integer(primary_key=True)
+    core: WeaponMainStatCore = ormar.ForeignKey(WeaponMainStatCore, skip_reverse=True, nullable=False)
+    level: int = ormar.SmallInteger(minimum=1, maximum=90)
+    ascension: int = ormar.SmallInteger(minimum=0, maximum=6, choices=list(Ascension))
+    value: float = ormar.Float(minimum=0)
+
 # Weapon - Sub Stat
 class WeaponSubStatLevelMultiplier(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_sub_stat_level_multipliers'
 
     id: int = ormar.Integer(primary_key=True)
-    level: int = ormar.SmallInteger(maximum=90)
+    level: int = ormar.SmallInteger(minimum=1, maximum=90)
     multiplier: float = ormar.Float(minimum=0)
 
 
@@ -58,6 +70,7 @@ class WeaponSubStat(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     core: WeaponSubStatCore = ormar.ForeignKey(WeaponSubStatCore, skip_reverse=True, nullable=False)
+    level: int = ormar.SmallInteger(minimum=1, maximum=90)
     value: float = ormar.Float(minimum=0)
 
 # Weapon - Passive Ability
@@ -103,7 +116,7 @@ class WeaponPassiveAbilityStat(ormar.Model):
 
     async def get_value_display(self) -> str:
         await self.core.load()
-        return '{}%'.format(round(self.value) * 100) if '%' in self.core.stat else str(round(self.value))
+        return '{}%'.format(round(self.value * 100)) if '%' in self.core.stat else str(round(self.value))
 
 # Weapon - Core
 class WeaponCore(ormar.Model):
@@ -113,7 +126,7 @@ class WeaponCore(ormar.Model):
     id: int = ormar.Integer(primary_key=True)
     name: str = ormar.String(max_length=100)
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Rarity))
-    main_stat_start_value: float = ormar.Float(minimum=0)
+    main_stat_core: WeaponMainStatCore = ormar.ForeignKey(WeaponMainStatCore, unique=True, skip_reverse=True, nullable=False)
     sub_stat_core: WeaponSubStatCore = ormar.ForeignKey(WeaponSubStatCore, unique=True, skip_reverse=True, nullable=False)
     weapon_type: str = ormar.String(max_length=2, choices=list(WeaponType))
     first_ascension_image: str = ormar.String(max_length=255)
@@ -127,9 +140,9 @@ class Weapon(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     core: WeaponCore = ormar.ForeignKey(WeaponCore, skip_reverse=True, nullable=False)
-    level: int = ormar.SmallInteger(maximum=90)
+    level: int = ormar.SmallInteger(minimum=1, maximum=90)
     ascension: int = ormar.SmallInteger(minimum=0, maximum=6, choices=list(Ascension))
-    main_stat_value: float = ormar.Float(minimum=0)
-    sub_stat: WeaponSubStat = ormar.ForeignKey(WeaponSubStat, nullable=False)
+    main_stat: WeaponMainStat = ormar.ForeignKey(WeaponMainStat, skip_reverse=True, nullable=False)
+    sub_stat: WeaponSubStat = ormar.ForeignKey(WeaponSubStat, skip_reverse=True, nullable=False)
     refinement: int = ormar.SmallInteger(minimum=1, maximum=5, choices=list(Refinement))
     passive_ability: WeaponPassiveAbility = ormar.ForeignKey(WeaponPassiveAbility, skip_reverse=True, nullable=False)

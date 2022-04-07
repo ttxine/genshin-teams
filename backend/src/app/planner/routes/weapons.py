@@ -9,37 +9,36 @@ weapon_main_stat_level_multiplier_router = APIRouter(tags=['Level Multipliers'])
 weapon_sub_stat_level_multiplier_router = APIRouter(tags=['Level Multipliers'])
 weapon_main_stat_ascension_value_router = APIRouter(tags=['Ascension Values'])
 weapon_passive_ability_router = APIRouter(tags=['Weapon Passive Abilities'])
-weapon_main_stat_tier_router = APIRouter(tags=['Weapon Main Stat Tiers'])
+weapon_main_stat_router = APIRouter(tags=['Weapon Main Stats'])
 weapon_router = APIRouter(tags=['Weapon'])
 weapon_sub_stat_router = APIRouter(tags=['Weapon Sub Stats'])
 
 
-# Weapon - Main Stat
-@weapon_main_stat_tier_router.get('/weapon-main-stat-tiers', response_model=list[models.WeaponMainStatTier])
-async def get_weapon_main_stat_tiers():
-    return await services.WeaponMainStatTierService().all()
+@weapon_main_stat_router.get('/weapon-main-stats', response_model=list[models.WeaponMainStat])
+async def get_weapon_main_stats():
+    return await services.weapon_main_stat_service.all()
 
 
-@weapon_main_stat_tier_router.post('/weapon-main-stat-tiers', response_model=models.WeaponMainStatTier, status_code=201, dependencies=[Security(get_current_superuser)])
-async def create_weapon_main_stat_tier(
-    schema: models.WeaponMainStatTier.get_pydantic(exclude={'id'})
+@weapon_main_stat_router.post('/weapon-main-stats', response_model=models.WeaponMainStat, status_code=201, dependencies=[Security(get_current_superuser)])
+async def create_weapon_main_stat(
+    schema: schemas.WeaponMainStat
 ):
-    return await services.WeaponMainStatTierService().create(schema)
+    return await services.weapon_main_stat_service.create(schema)
 
 
-@weapon_main_stat_tier_router.put('/weapon-main-stat-tiers/{pk}', response_model=models.WeaponMainStatTier, dependencies=[Security(get_current_superuser)])
-async def update_weapon_main_stat_tier(
+@weapon_main_stat_router.put('/weapon-main-stats/{pk}', response_model=models.WeaponMainStat, dependencies=[Security(get_current_superuser)])
+async def update_weapon_main_stat(
     pk: int,
-    schema: models.WeaponMainStatTier.get_pydantic(exclude={'id'})
+    schema: schemas.WeaponMainStat
 ):
-    return await services.WeaponMainStatTierService().update(schema, pk=pk)
+    return await services.weapon_main_stat_service.update(schema, pk=pk)
 
 
-@weapon_main_stat_tier_router.delete('/weapon-main-stat-tiers/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
-async def delete_weapon_main_stat_tier(
+@weapon_main_stat_router.delete('/weapon-main-stats/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
+async def delete_weapon_main_stat(
     pk: int
 ):
-    return await services.WeaponMainStatTierService().delete(pk=pk)
+    return await services.weapon_main_stat_service.delete(pk=pk)
 
 
 @weapon_main_stat_level_multiplier_router.get('/weapon-main-stat-level-multipliers', response_model=list[models.WeaponMainStatLevelMultiplier])
@@ -68,7 +67,61 @@ async def delete_weapon_main_stat_level_multiplier(
 ):
     return await services.WeaponMainStatLevelMultiplierService().delete(pk=pk)
 
-# Weapon - Sub Stat
+
+@weapon_sub_stat_router.get('/weapon-sub-stats', response_model=list[models.WeaponSubStat])
+async def get_weapon_sub_stats():
+    return await services.weapon_sub_stat_service.all()
+
+
+@weapon_sub_stat_router.post('/weapon-sub-stats', response_model=models.WeaponSubStat, status_code=201, dependencies=[Security(get_current_superuser)])
+async def create_weapon_sub_stat(
+    schema: schemas.WeaponSubStat
+):
+    return await services.weapon_sub_stat_service.create(schema)
+
+
+@weapon_sub_stat_router.put('/weapon-sub-stats/{pk}', response_model=models.WeaponSubStat, dependencies=[Security(get_current_superuser)])
+async def update_weapon_sub_stat(
+    pk: int,
+    schema: schemas.WeaponSubStat
+):
+    return await services.weapon_sub_stat_service.update(schema, pk=pk)
+
+
+@weapon_sub_stat_router.delete('/weapon-sub-stats/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
+async def delete_weapon_sub_stat(
+    pk: int
+):
+    return await services.weapon_sub_stat_service.delete(pk=pk)
+
+
+@weapon_sub_stat_router.get('/weapon-sub-stat-cores', response_model=list[models.WeaponSubStatCore])
+async def get_weapon_sub_stat_cores():
+    return await services.weapon_sub_stat_core_service.all()
+
+
+@weapon_sub_stat_router.post('/weapon-sub-stat-cores', response_model=models.WeaponSubStatCore, status_code=201, dependencies=[Security(get_current_superuser)])
+async def create_weapon_sub_stat_core(
+    schema: models.WeaponSubStatCore.get_pydantic(exclude={'id'})
+):
+    return await services.weapon_sub_stat_core_service.create(schema)
+
+
+@weapon_sub_stat_router.put('/weapon-sub-stat-cores/{pk}', response_model=models.WeaponSubStatCore, dependencies=[Security(get_current_superuser)])
+async def update_weapon_sub_stat_core(
+    pk: int,
+    schema: models.WeaponSubStatCore.get_pydantic(exclude={'id'})
+):
+    return await services.weapon_sub_stat_core_service.update(schema, pk=pk)
+
+
+@weapon_sub_stat_router.delete('/weapon-sub-stat-cores/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
+async def delete_weapon_sub_stat_core(
+    pk: int
+):
+    return await services.weapon_sub_stat_core_service.delete(pk=pk)
+
+
 @weapon_sub_stat_level_multiplier_router.get('/weapon-sub-stat-level-multipliers', response_model=list[models.WeaponSubStatLevelMultiplier])
 async def get_weapon_sub_stat_level_multiplier():
     return await services.WeaponSubStatLevelMultiplierService().all()
@@ -95,7 +148,7 @@ async def delete_weapon_sub_stat_level_multiplier(
 ):
     return await services.WeaponSubStatLevelMultiplierService().delete(pk=pk)
 
-# Weapon - Passive Ability
+
 @weapon_passive_ability_router.get('/weapon-passive-abilities', response_model=list[models.WeaponPassiveAbility])
 async def get_weapon_passive_abilities():
     return await services.weapon_passive_ability_service.all()
@@ -204,6 +257,52 @@ async def delete_weapon_passive_ability_stat_core(
     return await services.weapon_passive_ability_stat_core_service.delete(pk=pk)
 
 
+@weapon_router.get('/', response_model=list[models.Weapon])
+async def get_weapon():
+    return await services.weapon_service.all()
+
+
+@weapon_router.get('/{pk}', response_model=schemas.WeaponR)
+async def get_weapon(pk: int):
+    weapon: models.Weapon = await services.weapon_service.get_object_or_404(pk=pk)
+    pa_stats = await services.weapon_passive_ability_stat_service.filter(
+        core__passive_ability_core=weapon.passive_ability.core,
+        refinement=weapon.refinement
+    ).all()
+
+    pa = weapon.passive_ability
+    pa_schema = schemas.WeaponPassiveAbilityR(**pa.dict(), stats=pa_stats)
+
+    response = weapon.dict(exclude={'passive_ability'})
+    response.update(
+        passive_ability=pa_schema.dict()
+    )
+
+    return response
+
+
+@weapon_router.post('/', response_model=models.Weapon, status_code=201, dependencies=[Security(get_current_superuser)])
+async def create_weapon(
+    schema: schemas.Weapon
+):
+    return await services.weapon_service.create(schema)
+
+
+@weapon_router.put('/{pk}', response_model=models.Weapon, dependencies=[Security(get_current_superuser)])
+async def update_weapon(
+    pk: int,
+    schema: schemas.Weapon
+):
+    return await services.weapon_service.update(schema, pk=pk)
+
+
+@weapon_router.delete('/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
+async def delete_weapon(
+    pk: int
+):
+    return await services.weapon_service.delete(pk=pk)
+
+
 @weapon_router.get('/weapon-cores', response_model=list[models.WeaponCore])
 async def get_weapon_cores():
     return await services.weapon_core_service.all()
@@ -229,30 +328,3 @@ async def delete_weapon_core(
     pk: int
 ):
     return await services.weapon_core_service.delete(pk=pk)
-
-
-@weapon_sub_stat_router.get('/weapon-sub-stat-cores', response_model=list[models.WeaponSubStatCore])
-async def get_weapon_sub_stat_cores():
-    return await services.weapon_sub_stat_core_service.all()
-
-
-@weapon_sub_stat_router.post('/weapon-sub-stat-cores', response_model=models.WeaponSubStatCore, status_code=201, dependencies=[Security(get_current_superuser)])
-async def create_weapon_sub_stat_core(
-    schema: models.WeaponSubStatCore.get_pydantic(exclude={'id'})
-):
-    return await services.weapon_sub_stat_core_service.create(schema)
-
-
-@weapon_sub_stat_router.put('/weapon-sub-stat-cores/{pk}', response_model=models.WeaponSubStatCore, dependencies=[Security(get_current_superuser)])
-async def update_weapon_sub_stat_core(
-    pk: int,
-    schema: models.WeaponSubStatCore.get_pydantic(exclude={'id'})
-):
-    return await services.weapon_sub_stat_core_service.update(schema, pk=pk)
-
-
-@weapon_sub_stat_router.delete('/weapon-sub-stat-cores/{pk}', status_code=204, dependencies=[Security(get_current_superuser)])
-async def delete_weapon_sub_stat_core(
-    pk: int
-):
-    return await services.weapon_sub_stat_core_service.delete(pk=pk)
