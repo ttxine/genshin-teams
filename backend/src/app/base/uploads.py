@@ -14,3 +14,9 @@ def get_weapon_image_upload_path(name: str) -> str:
     directory = 'media/img/planner/weapons/{}/'.format(name)
     os.makedirs(directory, exist_ok=True)
     return directory
+
+
+def get_artifact_upload_path(name: str) -> str:
+    directory = 'media/img/planner/artifacts/{}/'.format(name)
+    os.makedirs(directory, exist_ok=True)
+    return directory

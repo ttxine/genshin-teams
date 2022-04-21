@@ -1,4 +1,13 @@
-from aenum import Enum
+from aenum import Enum, StrEnum
+
+
+ALLOWED_MAIN_STATS_FOR_TYPE = {
+    'flower': ('hp',),
+    'plume': ('atk',),
+    'sands': ('hp%', 'atk%', 'def%', 'em', 'er%'),
+    'goblet': ('hp%', 'atk%', 'def%', 'em', 'elem%', 'phys%'),
+    'circlet': ('hp%', 'atk%', 'def%', 'em', 'cr%', 'cd%', 'heal%')
+}
 
 
 class EnumLabelsMixin:
@@ -8,7 +17,7 @@ class EnumLabelsMixin:
         return self.string
 
 
-class WeaponType(EnumLabelsMixin, Enum):
+class WeaponType(EnumLabelsMixin, StrEnum):
 
     _init_ = 'value string'
 
@@ -54,7 +63,7 @@ class Refinement(EnumLabelsMixin, Enum):
     FIFTH = 5, '5th Refinement'
 
 
-class Stat(EnumLabelsMixin, Enum):
+class Stat(EnumLabelsMixin, StrEnum):
     
     _init_ = 'value string'
 
@@ -70,6 +79,7 @@ class Stat(EnumLabelsMixin, Enum):
     CRIT_RATE = 'cr%', 'Crit Rate%'
     CRIT_DMG = 'cd%', 'Crit DMG%'
     # Secondary Stats
+    ELEMENTAL_DMG_BONUS = 'elem%', 'Elemental DMG Bonus%'
     PHYS_DMG_BONUS = 'phys%', 'Physical DMG Bonus%'
     ANEMO_DMG_BONUS = 'anemo%', 'Anemo DMG Bonus%'
     GEO_DMG_BONUS = 'geo%', 'Geo DMG Bonus%'
@@ -90,7 +100,7 @@ class Stat(EnumLabelsMixin, Enum):
     SHIELD_STRENGTH = 'shield%', 'Shield Strength'
 
 
-class DamageType(EnumLabelsMixin, Enum):
+class DamageType(EnumLabelsMixin, StrEnum):
 
     _init_ = 'value string'
 
@@ -113,7 +123,7 @@ class MultiplierTier(EnumLabelsMixin, Enum):
     FOURTH_TIER = 4, 'Tier 4'
 
 
-class StatType(EnumLabelsMixin, Enum):
+class StatType(EnumLabelsMixin, StrEnum):
 
     _init_ = 'value string'
 
@@ -122,7 +132,7 @@ class StatType(EnumLabelsMixin, Enum):
     CONDITIONAL = 'cond', 'Conditional'
 
 
-class ArtifactType(EnumLabelsMixin, Enum):
+class ArtifactType(EnumLabelsMixin, StrEnum):
 
     _init_ = 'value string'
 
@@ -131,3 +141,24 @@ class ArtifactType(EnumLabelsMixin, Enum):
     SANDS_OF_EON = 'sands', 'Sands of Eon'
     GOBLET_OF_EONOTHEM = 'goblet', ' Goblet of Eonothem'
     CIRCLET_OF_LOGOS = 'circlet', 'Circlet of Logos'
+
+
+class PassiveTalentType(EnumLabelsMixin, StrEnum):
+
+    _init_ = 'value string'
+
+    FIRST_ASCENSION_PASSIVE = '1ap', 'First Ascension Passive'
+    FOURTH_ASCENSION_PASSIVE = '4ap', 'Fourth Ascension Passive'
+    UTILITY_PASSIVE = 'up', 'Utility Passive'
+
+
+class Element(EnumLabelsMixin, StrEnum):
+
+    _init_ = 'value string'
+
+    PYRO = 'p', 'Pyro'
+    HYDRO = 'h', 'Hydro'
+    ANEMO = 'a', 'Anemo'
+    ELECTRO = 'e', 'Electro'
+    CRYO = 'c', 'Cryo'
+    GEO = 'g', 'Geo'

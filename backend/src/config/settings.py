@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_DEVELOP_PREFIX = '/api/develop/'
-API_PREFIX = '/api/v1/'
+API_DEVELOP_PREFIX = '/api/develop'
+API_PREFIX = '/api/v1'
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'localhost:8000')
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///db.sqlite')

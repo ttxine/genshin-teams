@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Type
 
-from fastapi import BackgroundTasks, HTTPException, Request, Response, status
+import ormar
 from jose import JWTError, ExpiredSignatureError
+from fastapi import BackgroundTasks, HTTPException, Request, Response, status
 
 from src.core.security import get_password_hash, verify_password
 from src.app.user.models import User
@@ -27,12 +28,13 @@ async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int,
 
 
 async def register_user(schema: UserCreate, task: BackgroundTasks) -> None:
-    username_exists = await user_service.exists(username=schema.username)
-    email_exists = await user_service.exists(email=schema.email)
-    if username_exists or email_exists:
+    user_exists = await User.objects.filter(
+        ormar.or_(username=user.username, email=user.email)
+    ).exists()
+    if user_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='User with these credentials exists'
+            detail='User with the entered data already exists'
         )
     user = await user_service.create(schema)
     task.add_task(
@@ -50,7 +52,7 @@ async def authenticate_user(username: str, raw_password: str) -> User:
         )
     if not user.email_confirmed and not user.is_superuser:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail='Email not confirmed'
         )
     return user
@@ -80,7 +82,7 @@ async def change_user_password(token: str, old_raw_password: str, new_raw_passwo
     user = await user_service.get_object_or_404(pk=user_id)
     if not verify_password(old_raw_password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail='Wrong old password'
         )
     new_hashed_password = get_password_hash(new_raw_password)

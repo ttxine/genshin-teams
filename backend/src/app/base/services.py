@@ -10,6 +10,13 @@ CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
 UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
 
 
+def get_pydantic(model: Type[Model], name: str | None = None, exclude: set | dict = None, include: set | dict = None):
+    pydantic = model.get_pydantic(exclude=exclude, include=include)
+    if name:
+        pydantic.__name__ = name
+    return pydantic
+
+
 class ModelService:
     model: Type[Model]
     get_schema: GetSchema | None = None
@@ -26,6 +33,18 @@ class ModelService:
 
     async def get(self, **kwargs) -> GetSchema:
         return await self.model.objects.get(**kwargs)
+
+    async def get_or_create(self, schema: CreateSchema, **kwargs) -> GetSchema:
+        exists = self.exists(**kwargs)
+        if exists:
+            raise HTTPException(
+                status_code=400,
+                detail='{} already exist'.format(' '.join(re.findall(
+                    r'([A-Z][a-z]+)',
+                    self.model.__name__
+                )))
+            )
+        return self.create(schema)
 
     async def get_object_or_none(self, **kwargs) -> Type[Model] | None:
         return await self.model.objects.select_all(follow=True).get_or_none(**kwargs)

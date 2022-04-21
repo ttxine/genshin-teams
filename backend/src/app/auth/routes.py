@@ -20,7 +20,7 @@ from src.app.auth.services import (
 from src.app.auth.jwt import generate_access_token, generate_refresh_token
 from src.app.auth.permissions import security
 
-auth_router = APIRouter(tags=['Auth'])
+auth_router = APIRouter(tags=['Authentication'])
 
 
 @auth_router.post('/register', response_model=Message, status_code=201)

@@ -43,10 +43,10 @@ class WeaponMainStatService(ModelService):
             rarity=core.rarity
         )
         if schema.ascension > 0:
-            ascension_value = await WeaponMainStatAscensionValueService().get_object_or_404(
+            ascension_value = (await WeaponMainStatAscensionValueService().get_object_or_404(
                 ascension=schema.ascension,
                 rarity=core.rarity
-            )
+            )).ascension_value
         else:
             ascension_value = 0
 

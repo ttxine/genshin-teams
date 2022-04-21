@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from jose import jwt, JWTError
 
 from src.app.auth.models import BlacklistedToken
@@ -15,8 +16,8 @@ class Token:
     _secret_key: str
 
     def __init__(self, token: str) -> None:
-        self.token = token
-        self.payload = jwt.decode(
+        self._token = token
+        self._payload = jwt.decode(
             token,
             self._secret_key,
             settings.ALGORITHM
@@ -24,7 +25,7 @@ class Token:
 
     def _get(self, key: str) -> str:
         try:
-            val = self.payload[key]
+            val = self._payload[key]
         except KeyError:
             raise JWTError('Token hasn\'t {}'.format(key))
         return val
@@ -50,7 +51,7 @@ class Token:
 
     async def verify(self) -> None:
         user: User = await user_service.get_object_or_404(pk=self.user_id)
-        if user.invalidate_before.timestamp() >= self._get_iat():
+        if not self._is_iat_valid(user.invalidate_before):
             raise JWTError('Invalid token')
         self.validate_token_type()
         await self.check_blacklist()
@@ -69,7 +70,7 @@ class Token:
     async def blacklist(self) -> BlacklistedToken:
         blacklisted_token = await BlacklistedToken.objects.get_or_create(
             user=self.user_id,
-            token=self.token,
+            token=self._token,
             jti=self._get_jti(),
             expires_at=self._get_exp(),
         )
@@ -80,6 +81,11 @@ class Token:
 
         if blacklisted:
             raise JWTError('Token is blacklisted')
+
+    def _is_iat_valid(self, invalidate_before: datetime) -> bool:
+        iat_datetime = datetime.fromtimestamp(self._get_iat(), timezone.utc)\
+            .replace(tzinfo=None)
+        return invalidate_before < iat_datetime
 
 
 class AccessToken(Token):
