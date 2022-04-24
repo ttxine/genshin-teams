@@ -10,7 +10,7 @@ ArtifactSubStat = get_pydantic(models.ArtifactSubStat, name='ArtifactSubStat', e
 ArtifactSubStatRelated = get_pydantic(models.ArtifactSubStat, name='ArtifactSubStatRelated', exclude={'id', 'rarity'})
 ArtifactMainStatRelated = get_pydantic(models.ArtifactMainStat, name='ArtifactMainStatRelated', exclude={'id', 'level', 'rarity'})
 
-ArtifactSetBonus = get_pydantic(models.ArtifactSet, name='ArtifactSetBonusCreate', exclude={'id'})
+ArtifactSetBonus = get_pydantic(models.ArtifactSetBonus, name='ArtifactSetBonusCreate', exclude={'id'})
 ArtifactSetFromModel = get_pydantic(
     models.ArtifactSet,
     name='ArtifactSetCreate',
@@ -27,7 +27,7 @@ ArtifactCoreFromModel = get_pydantic(
     }
 )
 ArtifactFromModel = get_pydantic(
-    models.ArtifactCore,
+    models.Artifact,
     name='Artifact',
     exclude={
         'id',

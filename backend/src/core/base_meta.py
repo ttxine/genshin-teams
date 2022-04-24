@@ -4,3 +4,4 @@ from src.app.auth.models import BlacklistedToken
 from src.app.planner.models.attributes import StatCore
 from src.app.planner.models.weapons import *
 from src.app.planner.models.artifacts import *
+from src.app.planner.models.characters import *

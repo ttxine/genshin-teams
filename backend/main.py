@@ -8,7 +8,7 @@ from scripts.exceptions import CommandException
 from src.core.db import database
 from src.app.auth.routes import auth_router
 from src.app.user.routes import user_router
-from src.app.planner.routers import weapon_main_router, artifact_router
+from src.app.planner.routers import planner_router
 from src.config import settings
 
 
@@ -17,7 +17,9 @@ app = FastAPI(
     redoc_url='{}/redoc'.format(settings.API_DEVELOP_PREFIX),
     swagger_ui_parameters={
         'docExpansion': 'none'
-    }
+    },
+    title='Genshin Teams',
+    description='A tool providing team planner and calculator for Genshin Impact'
 )
 
 app.mount('/media', StaticFiles(directory='media'), name='media')
@@ -41,8 +43,7 @@ async def shutdown() -> None:
 
 app.include_router(auth_router, prefix='{}/auth'.format(settings.API_DEVELOP_PREFIX))
 app.include_router(user_router, prefix='{}/users'.format(settings.API_DEVELOP_PREFIX))
-app.include_router(weapon_main_router, prefix='{}/weapons'.format(settings.API_DEVELOP_PREFIX))
-app.include_router(artifact_router, prefix='{}'.format(settings.API_DEVELOP_PREFIX))
+app.include_router(planner_router, prefix='{}'.format(settings.API_DEVELOP_PREFIX))
 
 
 if __name__ == '__main__':

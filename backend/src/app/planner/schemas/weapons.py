@@ -1,8 +1,8 @@
-from fastapi import File, Body, UploadFile
 from pydantic import root_validator
+from fastapi import File, Body, UploadFile
 
-from src.app.base.forms import model_form_factory
 from src.app.planner.models import weapons
+from src.app.base.forms import model_form_factory
 
 WeaponPassiveAbilityStatFromModel = weapons.WeaponPassiveAbilityStat\
     .get_pydantic(exclude={'id', 'core', 'value'})

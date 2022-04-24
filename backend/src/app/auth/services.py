@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Type
 
 import ormar
-from jose import JWTError, ExpiredSignatureError
+from jose import JWTError
 from fastapi import BackgroundTasks, HTTPException, Request, Response, status
 
 from src.core.security import get_password_hash, verify_password
@@ -10,9 +10,9 @@ from src.app.user.models import User
 from src.app.user.services import user_service
 from src.app.user.schemas import UserCreate
 from src.app.auth.jwt import generate_refresh_token
-from src.app.auth.exceptions import CredentialsException, InvalidTokenException, TokenExpiredException
+from src.app.auth.exceptions import CredentialsException, InvalidTokenException
 from src.app.auth.tokens import AccessToken, EmailConfirmationToken, PasswordResetToken, RefreshToken, Token
-from src.app.base.utils.send_mail import send_email_confirmation, send_password_reset
+from src.utils.send_mail import send_email_confirmation, send_password_reset
 
 
 async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int, Token]:
@@ -20,8 +20,6 @@ async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int,
         token = token_class(raw_token)
         await token.verify()
         user_id = token.user_id
-    except ExpiredSignatureError:
-        raise TokenExpiredException()
     except JWTError:
         raise InvalidTokenException()
     return user_id, token

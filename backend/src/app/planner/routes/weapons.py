@@ -5,10 +5,10 @@ from src.app.planner.models import weapons as models
 from src.app.planner.services import weapons as services
 from src.app.auth.permissions import get_current_superuser
 
-weapon_main_stat_level_multiplier_router = APIRouter(tags=['Level Multipliers'])
-weapon_sub_stat_level_multiplier_router = APIRouter(tags=['Level Multipliers'])
-weapon_passive_ability_router = APIRouter(tags=['Weapon Passive Abilities'])
-weapon_router = APIRouter(tags=['Weapon'])
+weapon_main_stat_level_multiplier_router = APIRouter(prefix='/weapons', tags=['Level Multipliers'])
+weapon_sub_stat_level_multiplier_router = APIRouter(prefix='/weapons', tags=['Level Multipliers'])
+weapon_passive_ability_router = APIRouter(prefix='/weapons', tags=['Weapon Passive Abilities'])
+weapon_router = APIRouter(prefix='/weapons', tags=['Weapon'])
 
 
 @weapon_sub_stat_level_multiplier_router.get('/sub-stat-level-multipliers', response_model=list[models.WeaponSubStatLevelMultiplier])

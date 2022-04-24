@@ -5,7 +5,6 @@ from ormar import Model
 from pydantic import BaseModel
 from fastapi import HTTPException
 
-GetSchema = TypeVar('GetSchema', bound=BaseModel)
 CreateSchema = TypeVar('CreateSchema', bound=BaseModel)
 UpdateSchema = TypeVar('UpdateSchema', bound=BaseModel)
 
@@ -19,78 +18,74 @@ def get_pydantic(model: Type[Model], name: str | None = None, exclude: set | dic
 
 class ModelService:
     model: Type[Model]
-    get_schema: GetSchema | None = None
     create_schema: CreateSchema | None = None
     update_schema: UpdateSchema | None = None
 
-    def __init__(self) -> None:
-        if not self.get_schema:
-            self.get_schema = self.model
-        if not self.create_schema:
-            self.create_schema = self.model.get_pydantic(exclude={'id'})
-        if not self.update_schema:
-            self.update_schema = self.model.get_pydantic(exclude={'id'})
+    @classmethod
+    async def get(cls, **kwargs) -> Model:
+        return await cls.model.objects.get(**kwargs)
 
-    async def get(self, **kwargs) -> GetSchema:
-        return await self.model.objects.get(**kwargs)
+    @classmethod
+    async def get_or_create(cls, schema: CreateSchema, **kwargs) -> Model:
+        obj = await cls.get_object_or_none(**kwargs)
+        if obj:
+            return obj
+        return await cls.create(schema)
 
-    async def get_or_create(self, schema: CreateSchema, **kwargs) -> GetSchema:
-        exists = self.exists(**kwargs)
-        if exists:
-            raise HTTPException(
-                status_code=400,
-                detail='{} already exist'.format(' '.join(re.findall(
-                    r'([A-Z][a-z]+)',
-                    self.model.__name__
-                )))
-            )
-        return self.create(schema)
+    @classmethod
+    async def get_object_or_none(cls, **kwargs) -> Type[Model] | None:
+        return await cls.model.objects.select_all(follow=True).get_or_none(**kwargs)
 
-    async def get_object_or_none(self, **kwargs) -> Type[Model] | None:
-        return await self.model.objects.select_all(follow=True).get_or_none(**kwargs)
-
-    async def get_object_or_404(self, **kwargs) -> GetSchema:
-        obj = await self.get_object_or_none(**kwargs)
+    @classmethod
+    async def get_object_or_404(cls, **kwargs) -> Model:
+        obj = await cls.get_object_or_none(**kwargs)
         if not obj:
             raise HTTPException(
                 status_code=404,
                 detail='{} does not exist'.format(' '.join(re.findall(
                     r'([A-Z][a-z]+)',
-                    self.model.__name__
+                    cls.model.__name__
                 )))
             )
-        return self.get_schema(**obj.dict())
+        return obj
 
-    def filter(self, limit: int | None = None, **kwargs) -> list[GetSchema] | None:
-        qs = self.model.objects.select_all(follow=True).filter(**kwargs)
+    @classmethod
+    def filter(cls, limit: int | None = None, **kwargs) -> list[Model]:
+        qs = cls.model.objects.select_all(follow=True).filter(**kwargs)
         if limit:
             return qs[:limit]
         else:
             return qs
 
-    async def all(self, limit: int | None = None) -> list[GetSchema] | None:
-        qs = await self.model.objects.select_all(follow=True).all()
+    @classmethod
+    async def all(cls, limit: int | None = None) -> list[Model]:
+        qs = await cls.model.objects.select_all(follow=True).all()
         if limit:
             return qs[:limit]
         else:
             return qs
 
-    async def create(self, schema: CreateSchema | None = None, **kwargs) -> GetSchema:
+    @classmethod
+    async def create(cls, schema: CreateSchema | None = None, **kwargs) -> Model:
         if schema:
-            model = await self._pre_save(schema)
+            model = await cls._pre_save(schema)
             kwargs.update(model)
-        return await self.model.objects.create(**kwargs)
+        return await cls.model.objects.create(**kwargs)
 
-    async def update(self, schema: UpdateSchema, **kwargs) -> GetSchema:
-        obj = await self.get_object_or_404(**kwargs)
-        model = await self._pre_save(schema)
+    @classmethod
+    async def update(cls, schema: UpdateSchema, **kwargs) -> Model:
+        obj = await cls.get_object_or_404(**kwargs)
+        model = await cls._pre_save(schema)
         return await obj.update(**model)
 
-    async def delete(self, **kwargs):
-        return await self.model.objects.filter(**kwargs).delete()
+    @classmethod
+    async def delete(cls, **kwargs):
+        return await cls.model.objects.filter(**kwargs).delete()
 
-    async def exists(self, **kwargs) -> bool:
-        return await self.model.objects.filter(**kwargs).exists()
+    @classmethod
+    async def exists(cls, **kwargs) -> bool:
+        return await cls.model.objects.filter(**kwargs).exists()
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
         return schema.dict(exclude_unset=True, exclude_none=exclude_none)

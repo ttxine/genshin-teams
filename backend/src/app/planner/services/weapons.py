@@ -4,7 +4,7 @@ from ormar import Model
 
 from src.app.base.services import ModelService, CreateSchema, UpdateSchema
 from src.app.base.uploads import get_weapon_image_upload_path
-from src.app.base.utils.images import upload_image
+from src.utils.images import upload_image
 from src.app.planner.models import weapons as models
 from src.app.planner.schemas import weapons as schemas
 
@@ -32,7 +32,8 @@ class WeaponMainStatCoreService(ModelService):
 class WeaponMainStatService(ModelService):
     model: Type[Model] = models.WeaponMainStat
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
         core: models.WeaponMainStatCore = await WeaponMainStatCoreService().get_object_or_404(
             pk=schema.core
         )
@@ -52,7 +53,7 @@ class WeaponMainStatService(ModelService):
 
         value = start_value * level_multiplier.multiplier + ascension_value
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={'core'}),
             core=core,
@@ -68,7 +69,8 @@ class WeaponSubStatCoreService(ModelService):
 class WeaponSubStatService(ModelService):
     model: Type[Model] = models.WeaponSubStat
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
         core: models.WeaponSubStatCore = await WeaponSubStatCoreService().get_object_or_404(
             pk=schema.core
         )
@@ -79,7 +81,7 @@ class WeaponSubStatService(ModelService):
 
         value = start_value * level_multiplier.multiplier
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={'core', 'value'}),
             core=core,
@@ -98,13 +100,14 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
     create_schema: CreateSchema = schemas.WeaponPassiveAbilityStatCoreCU
     update_schema: UpdateSchema = schemas.WeaponPassiveAbilityStatCoreCU
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema):
         passive_ability_core = await WeaponPassiveAbilityCoreService()\
             .get_object_or_404(pk=schema.passive_ability_core)
 
         refinement_scale = (schema.max_value - schema.start_value) / 4
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={'passive_ability_core', 'refinement_scale'}),
             passive_ability_core=passive_ability_core,
@@ -113,13 +116,15 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
 
         return await super()._pre_save(to_save)
 
-    async def get_object_or_none(self, **kwargs) -> Type[Model] | None:
-        return await self.model.objects.select_related(
+    @classmethod
+    async def get_object_or_none(cls, **kwargs) -> Type[Model] | None:
+        return await cls.model.objects.select_related(
             'passive_ability_core'
         ).get_or_none(**kwargs)
 
-    async def all(self, limit: int | None = None):
-        qs = await self.model.objects.select_related(
+    @classmethod
+    async def all(cls, limit: int | None = None):
+        qs = await cls.model.objects.select_related(
             'passive_ability_core'
         ).all()
         if limit:
@@ -127,8 +132,9 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
         else:
             return qs
 
-    def filter(self, limit: int | None = None, **kwargs):
-        qs = self.model.objects.filter(**kwargs).order_by(
+    @classmethod
+    def filter(cls, limit: int | None = None, **kwargs):
+        qs = cls.model.objects.filter(**kwargs).order_by(
             'position'
         )
         if limit:
@@ -136,10 +142,12 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
         else:
             return qs
 
-    async def create(self, schema: schemas.WeaponPassiveAbilityStatCoreCU, **kwargs):
+    @classmethod
+    async def create(cls, schema: schemas.WeaponPassiveAbilityStatCoreCU, **kwargs):
         return await super().create(schema, **kwargs)
 
-    async def update(self, schema: UpdateSchema | None = None, **kwargs):
+    @classmethod
+    async def update(cls, schema: UpdateSchema | None = None, **kwargs):
         return await super().update(schema, **kwargs)
 
 
@@ -148,7 +156,8 @@ class WeaponPassiveAbilityService(ModelService):
     create_schema = schemas.WeaponPassiveAbilityCU
     update_schema = schemas.WeaponPassiveAbilityCU
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
         core: models.WeaponPassiveAbilityCore = \
             await WeaponPassiveAbilityCoreService().get_object_or_404(
                 id=schema.core
@@ -168,7 +177,7 @@ class WeaponPassiveAbilityService(ModelService):
 
         description = core.description_template.format(*values)
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={'core', 'description'}),
             core=core,
@@ -183,14 +192,15 @@ class WeaponPassiveAbilityStatService(ModelService):
     create_schema: CreateSchema = schemas.WeaponPassiveAbilityStat
     update_schema: UpdateSchema = schemas.WeaponPassiveAbilityStat
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
         core = await WeaponPassiveAbilityStatCoreService().get_object_or_404(
             pk=schema.core
         )
 
         value = core.start_value + core.refinement_scale * (schema.refinement - 1)
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={'core', 'value'}),
             core=core,
@@ -203,7 +213,8 @@ class WeaponPassiveAbilityStatService(ModelService):
 class WeaponCoreService(ModelService):
     model: Type[Model] = models.WeaponCore
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
         fa_img = schema.first_ascension_image
         sa_img = schema.second_ascension_image
 
@@ -226,7 +237,7 @@ class WeaponCoreService(ModelService):
         passive_ability_core = await WeaponPassiveAbilityCoreService()\
             .get_object_or_404(pk=schema.passive_ability_core)
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={
                 'first_ascension_image',
@@ -250,7 +261,8 @@ class WeaponService(ModelService):
     create_schema: CreateSchema = schemas.Weapon
     update_schema: UpdateSchema = schemas.Weapon
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
         core: models.WeaponCore = await WeaponCoreService().get_object_or_404(pk=schema.core)
 
         passive_ability = await WeaponPassiveAbilityService().get_object_or_404(
@@ -269,7 +281,7 @@ class WeaponService(ModelService):
             level=schema.level
         )
 
-        to_save = self.model(
+        to_save = cls.model(
             **schema.dict(
                 exclude={'core', 'main_stat', 'sub_stat', 'passive_ability'}
             ),

@@ -1,6 +1,5 @@
-from operator import ge
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
-from src.app.planner.consts import ALLOWED_MAIN_STATS_FOR_TYPE, ArtifactType, Rarity, Stat
+from src.app.planner.consts import ALLOWED_MAIN_STATS_FOR_TYPE, ArtifactType, Stat
 
 from src.app.planner.models import artifacts as models
 from src.app.planner.schemas import artifacts as schemas

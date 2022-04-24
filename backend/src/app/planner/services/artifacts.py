@@ -7,7 +7,7 @@ from src.app.base.services import ModelService, CreateSchema, UpdateSchema
 from src.app.base.uploads import get_artifact_upload_path
 from src.app.planner.consts import ALLOWED_MAIN_STATS_FOR_TYPE
 from src.app.planner.models import artifacts as models
-from src.app.base.utils.images import upload_image
+from src.utils.images import upload_image
 
 
 class ArtifactSubStatService(ModelService):
@@ -25,12 +25,13 @@ class ArtifactSetBonusService(ModelService):
 class ArtifactSetService(ModelService):
     model: Type[Model] = models.ArtifactSet
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
         bonus_service = ArtifactSetBonusService()
-        two_piece_bonus = await bonus_service.create(schema.two_piece_bonus)
-        four_piece_bonus = await bonus_service.create(schema.four_piece_bonus)
+        two_piece_bonus = await bonus_service.get_or_create(schema.two_piece_bonus)
+        four_piece_bonus = await bonus_service.get_or_create(schema.four_piece_bonus)
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={
                 'two_piece_bonus',
@@ -46,7 +47,8 @@ class ArtifactSetService(ModelService):
 class ArtifactCoreService(ModelService):
     model: Type[Model] = models.ArtifactCore
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
         artifact_set = await ArtifactSetService().get_object_or_404(
             pk=schema.artifact_set
         )
@@ -54,7 +56,7 @@ class ArtifactCoreService(ModelService):
         upload_path = get_artifact_upload_path(schema.name)
         image_path = upload_image(upload_path, schema.image, (250, 250))
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={
                 'artifact_set',
@@ -70,7 +72,8 @@ class ArtifactCoreService(ModelService):
 class ArtifactService(ModelService):
     model: Type[Model] = models.Artifact
 
-    async def _pre_save(self, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
         artifact_set = await ArtifactSetService().get_object_or_404(
             pk=schema.artifact_set
         )
@@ -130,7 +133,7 @@ class ArtifactService(ModelService):
         else:
             fourth_sub_stat = None
 
-        ModelSchema = self.model.get_pydantic(exclude={'id'})
+        ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
             **schema.dict(exclude={
                 'core',

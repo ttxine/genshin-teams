@@ -134,6 +134,17 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
     _model: Type[Model] = artifacts.ArtifactSubStat
 
     @classmethod
+    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
+        for raw_obj in data:
+            for roll in range(1, 5):
+                raw_obj['Roll'] = roll
+                obj = cls._as_model(raw_obj)
+                if obj is not None:
+                    await cls._model.objects.get_or_create(
+                        **obj.dict(exclude={'id'})
+                    )
+
+    @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
         raw_id = str(raw_obj['Id'])
         rarity = int(raw_id[0])
@@ -141,11 +152,13 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
         if rarity < 6:
             prop = raw_obj['PropType']
             value = raw_obj['PropValue']
+            roll = raw_obj['Roll']
 
             obj = {
                 'rarity': rarity,
                 'stat': INGAME_PROPS[prop],
-                'value': value
+                'value': value * roll,
+                'roll': roll
             }
 
             return super()._as_model(obj)

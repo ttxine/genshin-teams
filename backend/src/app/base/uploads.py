@@ -20,3 +20,9 @@ def get_artifact_upload_path(name: str) -> str:
     directory = 'media/img/planner/artifacts/{}/'.format(name)
     os.makedirs(directory, exist_ok=True)
     return directory
+
+
+def get_character_upload_path(name: str) -> str:
+    directory = 'media/img/planner/characters/{}/'.format(name)
+    os.makedirs(directory, exist_ok=True)
+    return directory
