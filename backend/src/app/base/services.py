@@ -34,7 +34,7 @@ class ModelService:
 
     @classmethod
     async def get_object_or_none(cls, **kwargs) -> Type[Model] | None:
-        return await cls.model.objects.select_all(follow=True).get_or_none(**kwargs)
+        return await cls.model.objects.get_or_none(**kwargs)
 
     @classmethod
     async def get_object_or_404(cls, **kwargs) -> Model:
@@ -58,12 +58,13 @@ class ModelService:
             return qs
 
     @classmethod
-    async def all(cls, limit: int | None = None) -> list[Model]:
-        qs = await cls.model.objects.select_all(follow=True).all()
-        if limit:
-            return qs[:limit]
-        else:
-            return qs
+    async def all(
+        cls,
+        offset: int | None = None,
+        limit: int | None = None
+    ) -> list[Model]:
+        return await cls.model.objects.select_all(follow=True)\
+            .offset(offset).limit(limit).all()
 
     @classmethod
     async def create(cls, schema: CreateSchema | None = None, **kwargs) -> Model:

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
-from src.app.planner.consts import ALLOWED_MAIN_STATS_FOR_TYPE, ArtifactType, Stat
+from src.app.planner.consts import ALLOWED_ARTIFACT_MAIN_STATS_FOR_TYPE, ArtifactType, Stat
 
 from src.app.planner.models import artifacts as models
 from src.app.planner.schemas import artifacts as schemas
@@ -62,7 +62,7 @@ async def get_artifact_main_stat(
 @artifact_router.get('/{artifact_type}/allowed-main-stats', response_model=list[Stat])
 async def get_allowed_artifact_main_stats_by_artifact_type(artifact_type: ArtifactType = Path(...)):
     try:
-        allowed = ALLOWED_MAIN_STATS_FOR_TYPE[artifact_type]
+        allowed = ALLOWED_ARTIFACT_MAIN_STATS_FOR_TYPE[artifact_type]
     except KeyError:
         raise HTTPException(
             status_code=400,

@@ -3,19 +3,19 @@ from pydantic import EmailStr
 
 from src.app.auth.jwt import generate_email_confirmation_token, generate_password_reset_token
 from src.app.user.models import User
-from src.config.settings import SITE_DOMAIN
+from src.config import settings
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="loremcardstorage@gmail.com",
-    MAIL_PASSWORD="gymyba56",
-    MAIL_FROM="loremcardstorage@gmail.com",
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_FROM_NAME="Genshin Teams",
-    MAIL_TLS=True,
-    MAIL_SSL=False,
-    TEMPLATE_FOLDER='src/templates',
-    VALIDATE_CERTS=True
+    MAIL_USERNAME=settings.MAIL_USERNAME,
+    MAIL_PASSWORD=settings.MAIL_PASSWORD,
+    MAIL_FROM=settings.MAIL_FROM,
+    MAIL_PORT=settings.MAIL_PORT,
+    MAIL_SERVER=settings.MAIL_SERVER,
+    MAIL_FROM_NAME=settings.MAIL_FROM_NAME,
+    MAIL_TLS=settings.MAIL_TLS,
+    MAIL_SSL=settings.MAIL_SSL,
+    TEMPLATE_FOLDER=settings.TEMPLATE_FOLDER,
+    VALIDATE_CERTS=settings.VALIDATE_CERTS
 )
 
 
@@ -35,7 +35,7 @@ async def send_email_confirmation(user: User) -> None:
     token = generate_email_confirmation_token(user.id)
     body = {
         'username': user.username,
-        'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
+        'link': 'http://{0}/confirm-email/?token={1}'.format(settings.SITE_DOMAIN, token)
     }
     await _send_mail(
         user.email,
@@ -48,7 +48,7 @@ async def send_email_confirmation(user: User) -> None:
 async def send_password_reset(user: User) -> None:
     token = generate_password_reset_token(user.id)
     body = {
-        'link': 'http://{0}/confirm-email/?token={1}'.format(SITE_DOMAIN, token)
+        'link': 'http://{0}/confirm-email/?token={1}'.format(settings.SITE_DOMAIN, token)
     }
     await _send_mail(
         user.email,

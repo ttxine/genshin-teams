@@ -1,4 +1,5 @@
 from fastapi import Body, File, UploadFile
+from pydantic import BaseModel
 
 from src.app.base.services import get_pydantic
 from src.app.base.forms import model_form_factory
@@ -14,11 +15,20 @@ CharacterFromModel = get_pydantic(models.Character, 'Character', include={'level
 
 class CharacterCore(CharacterCoreFromModel):
     bonus_stat: Stat
-    bonus_stat_start_value: int = Body(..., ge=0)
+    bonus_stat_start_value: float = Body(..., ge=0)
     image: UploadFile = File(...)
 
 
 CharacterCoreForm = model_form_factory(CharacterCore)
+
+
+class CharacterRelated(BaseModel):
+    character_core: CharacterCore
+    level: int
+    ascension: int
+    health: float
+    attack: float
+    deffence: float
 
 
 class Character(CharacterFromModel):
@@ -32,28 +42,28 @@ class Character(CharacterFromModel):
         description='ID of weapon',
         gt=0
     )
-    artifact_flower: int = Body(
-        ...,
+    artifact_flower: int | None = Body(
+        None,
         description='ID of flower',
         gt=0
     )
-    artifact_plume: int = Body(
-        ...,
+    artifact_plume: int | None = Body(
+        None,
         description='ID of plume',
         gt=0
     )
-    artifact_sands: int = Body(
-        ...,
+    artifact_sands: int | None = Body(
+        None,
         description='ID of sands',
         gt=0
     )
-    artifact_goblet: int = Body(
-        ...,
+    artifact_goblet: int | None = Body(
+        None,
         description='ID of goblet',
         gt=0
     )
-    artifact_circlet: int = Body(
-        ...,
+    artifact_circlet: int | None = Body(
+        None,
         description='ID of circlet',
         gt=0
     )

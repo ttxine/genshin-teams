@@ -1,7 +1,6 @@
 import ormar
 
-from src.app.planner.consts import ArtifactType, Rarity, Stat, StatType
-from src.app.planner.models.attributes import StatCore
+from src.app.planner.consts import ArtifactType, Stat, StatType
 from src.core.db import BaseMeta
 
 
@@ -24,6 +23,7 @@ class ArtifactSubStat(ormar.Model):
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5)
     stat: str = ormar.String(max_length=10, choices=list(Stat))
     value: float = ormar.Float(minimum=0)
+    roll: int = ormar.SmallInteger(minimum=1, maximum=6, default=1)
 
 
 class ArtifactSetBonus(ormar.Model):

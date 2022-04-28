@@ -1,7 +1,7 @@
 from aenum import Enum, StrEnum
 
 
-ALLOWED_MAIN_STATS_FOR_TYPE = {
+ALLOWED_ARTIFACT_MAIN_STATS_FOR_TYPE = {
     'flower': ('hp',),
     'plume': ('atk',),
     'sands': ('hp%', 'atk%', 'def%', 'em', 'er%'),

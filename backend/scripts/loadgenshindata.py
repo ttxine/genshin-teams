@@ -7,7 +7,7 @@ from ormar import Model
 from ormar.exceptions import ModelError
 from scripts.exceptions import CommandException
 
-from src.app.planner.models import artifacts, weapons
+from src.app.planner.models import artifacts, weapons, characters
 
 INGAME_PROPS = {
     'FIGHT_PROP_HP': 'hp',
@@ -37,8 +37,8 @@ INGAME_PROPS_EXCLUDE = {
 
 
 class GenshinDataCollector:
-    _url: str
-    _model: Type[Model]
+    _url: str = None
+    _model: Type[Model] = None
 
     @classmethod
     async def collect(cls) -> None:
@@ -55,7 +55,7 @@ class GenshinDataCollector:
             raise CommandException(
                 'Genshin data could not be loaded.\nError: Raw object from '
                 'data source doesn\'t have {0} key. '
-                'Source _url: {1}'.format(e, cls._url)
+                'Source url: {1}'.format(e, cls._url)
             ) from KeyError
         else:
             print('{}s collected successfully.'.format(' '.join(re.findall(
@@ -136,7 +136,7 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
     @classmethod
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
         for raw_obj in data:
-            for roll in range(1, 5):
+            for roll in range(1, 7):
                 raw_obj['Roll'] = roll
                 obj = cls._as_model(raw_obj)
                 if obj is not None:
@@ -191,12 +191,101 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
             return super()._as_model(obj)
 
 
+class CharacterLevelMultiplierDataCollector(GenshinDataCollector):
+    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/AvatarCurveExcelConfigData.json'
+    _model: Type[Model] = characters.CharacterLevelMultiplier
+
+    @classmethod
+    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
+        for raw_obj in data:
+            if raw_obj['Level'] <= 90:
+                for rarity_index in range(1, 3):
+                    obj = cls._as_model(raw_obj, index=rarity_index)
+                    if obj is not None:
+                        await cls._model.objects.get_or_create(
+                            **obj.dict(exclude={'id'})
+                        )
+
+    @classmethod
+    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
+        obj = {
+            'level': raw_obj['Level'],
+            'rarity': int(raw_obj['CurveInfos'][kwargs['index']]['Type'][-1]),
+            'multiplier': raw_obj['CurveInfos'][kwargs['index']]['Value']
+        }
+        return super()._as_model(obj)
+
+
+async def collect_character_ascension():
+    ascensions = [
+        {
+            "ascension": 0,
+            "sum_of_sections": 0,
+            "bonus_stat_multiplier": 0
+        },
+        {
+            "ascension": 1,
+            "sum_of_sections": 38,
+            "bonus_stat_multiplier": 0
+        },
+        {
+            "ascension": 2,
+            "sum_of_sections": 65,
+            "bonus_stat_multiplier": 1
+        },
+        {
+            "ascension": 3,
+            "sum_of_sections": 101,
+            "bonus_stat_multiplier": 2
+        },
+        {
+            "ascension": 4,
+            "sum_of_sections": 128,
+            "bonus_stat_multiplier": 2
+        },
+        {
+            "ascension": 5,
+            "sum_of_sections": 155,
+            "bonus_stat_multiplier": 3
+        },
+        {
+            "ascension": 6,
+            "sum_of_sections": 182,
+            "bonus_stat_multiplier": 4
+        }
+    ]
+
+    for ascension in ascensions:
+        await characters.CharacterAscension.objects.get_or_create(**ascension)
+
+    print("Character ascension data collected successfully.")
+
+
+# async def collect_elemental_resonance():
+#     resonances = [
+#         {
+#             "name": "",
+#             "effect": {
+#                 "stat": "hp",
+#                 "value": 0.00
+#             },
+#         }
+#     ]
+
+#     for resonance in resonances:
+#         await characters.CharacterAscension.objects.get_or_create(**resonance)
+
+#     print("Character ascension data collected successfully.")
+
+
 async def loadgenshindata():
     tasks = [
         WeaponMainStatDataCollector.collect(),
         WeaponAscensionValueDataCollector.collect(),
         ArtifactSubStatDataCollector.collect(),
-        ArtifactMainStatDataCollector.collect()
+        ArtifactMainStatDataCollector.collect(),
+        CharacterLevelMultiplierDataCollector.collect(),
+        collect_character_ascension()
     ]
     await asyncio.gather(*tasks)
     print('\nGenshin data has been loaded.')

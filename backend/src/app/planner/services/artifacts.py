@@ -5,7 +5,7 @@ from ormar import Model
 
 from src.app.base.services import ModelService, CreateSchema, UpdateSchema
 from src.app.base.uploads import get_artifact_upload_path
-from src.app.planner.consts import ALLOWED_MAIN_STATS_FOR_TYPE
+from src.app.planner.consts import ALLOWED_ARTIFACT_MAIN_STATS_FOR_TYPE
 from src.app.planner.models import artifacts as models
 from src.utils.images import upload_image
 
@@ -78,7 +78,7 @@ class ArtifactService(ModelService):
             pk=schema.artifact_set
         )
 
-        if schema.main_stat.stat not in ALLOWED_MAIN_STATS_FOR_TYPE[schema.artifact_type]:
+        if schema.main_stat.stat not in ALLOWED_ARTIFACT_MAIN_STATS_FOR_TYPE[schema.artifact_type]:
             raise HTTPException(
                 status_code=400,
                 detail='Wrong main stat'

@@ -1,8 +1,8 @@
 import ormar
 
-from src.app.planner.consts import Ascension, MultiplierTier, Rarity, Refinement, StatType, WeaponType
-from src.app.planner.models.attributes import StatCore
 from src.core.db import BaseMeta
+from src.app.planner.consts import StatType, WeaponType
+from src.app.planner.models.attributes import StatCore
 
 # Weapon - Main Stat (Base Attack)
 class WeaponMainStatLevelMultiplier(ormar.Model):
@@ -90,6 +90,7 @@ class WeaponPassiveAbilityStatCore(StatCore):
     id: int = ormar.Integer(primary_key=True)
     passive_ability_core: WeaponPassiveAbilityCore = ormar.ForeignKey(WeaponPassiveAbilityCore, skip_reverse=True, nullable=False)
     stat_type: str = ormar.String(max_length=5, choices=list(StatType))
+    is_team_buff: bool = ormar.Boolean(default=False)
     max_value: float = ormar.Float(minimum=0)
     refinement_scale: float = ormar.Float(minimum=0)
     position: int = ormar.SmallInteger(minimum=0, default=0)

@@ -35,8 +35,8 @@ class CharacterCore(ormar.Model):
     max_ascension_attack: float = ormar.Float(minimum=0)
     max_ascension_deffence: float = ormar.Float(minimum=0)
 
-    element = ormar.String(max_length=1, choices=list(Element))
-    weapon_type = ormar.String(max_length=2, choices=list(WeaponType))
+    element: str = ormar.String(max_length=1, choices=list(Element))
+    weapon_type: str = ormar.String(max_length=2, choices=list(WeaponType))
 
 
 class CharacterLevelMultiplier(ormar.Model):
@@ -65,7 +65,7 @@ class CharacterBonusStat(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     core: CharacterBonusStatCore = ormar.ForeignKey(CharacterBonusStatCore, skip_reverse=True, nullable=False)
-    ascension: int = ormar.SmallInteger(minimum=1, maximum=90)
+    ascension: int = ormar.SmallInteger(minimum=0, maximum=90)
     value: float = ormar.Float(minimum=0)
 
 
@@ -112,11 +112,11 @@ class Character(ormar.Model):
     incoming_healing_bonus: float = ormar.Float(minimum=0, default=0)
     shield_strength: float = ormar.Float(minimum=0, default=0)
 
-    artifact_flower: Artifact = ormar.ForeignKey(Artifact, related_name='characters_as_flower', nullable=False)
-    artifact_plume: Artifact = ormar.ForeignKey(Artifact, related_name='characters_as_plume', nullable=False)
-    artifact_sands: Artifact = ormar.ForeignKey(Artifact, related_name='characters_as_sands', nullable=False)
-    artifact_goblet: Artifact = ormar.ForeignKey(Artifact, related_name='characters_as_goblet', nullable=False)
-    artifact_circlet: Artifact = ormar.ForeignKey(Artifact, related_name='characters_as_circlet', nullable=False)
+    artifact_flower: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_flower', nullable=True)
+    artifact_plume: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_plume', nullable=True)
+    artifact_sands: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_sands', nullable=True)
+    artifact_goblet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_goblet', nullable=True)
+    artifact_circlet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_circlet', nullable=True)
 
     total_attack: float = ormar.Float(minimum=0)
     total_health: float = ormar.Float(minimum=0)

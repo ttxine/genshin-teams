@@ -193,6 +193,12 @@ class WeaponPassiveAbilityStatService(ModelService):
     update_schema: UpdateSchema = schemas.WeaponPassiveAbilityStat
 
     @classmethod
+    async def get_object_or_none(cls, **kwargs) -> Type[Model] | None:
+        return await cls.model.objects.select_related([
+            'core'
+        ]).get_or_none(**kwargs)
+
+    @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
         core = await WeaponPassiveAbilityStatCoreService().get_object_or_404(
             pk=schema.core
@@ -260,6 +266,21 @@ class WeaponService(ModelService):
     model: Type[Model] = models.Weapon
     create_schema: CreateSchema = schemas.Weapon
     update_schema: UpdateSchema = schemas.Weapon
+
+    @classmethod
+    async def get_object_or_none(cls, **kwargs):
+        return await cls.model.objects.select_related([
+            'core',
+            'main_stat',
+            'main_stat__core',
+            'sub_stat',
+            'sub_stat__core',
+            'passive_ability',
+            'passive_ability__core',
+            'core__main_stat_core',
+            'core__sub_stat_core',
+            'core__passive_ability_core'
+        ]).get_or_none(**kwargs)
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):

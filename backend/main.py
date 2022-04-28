@@ -42,7 +42,7 @@ async def shutdown() -> None:
 
 
 app.include_router(auth_router, prefix='{}/auth'.format(settings.API_DEVELOP_PREFIX))
-app.include_router(user_router, prefix='{}/users'.format(settings.API_DEVELOP_PREFIX))
+app.include_router(user_router, prefix='{}'.format(settings.API_DEVELOP_PREFIX))
 app.include_router(planner_router, prefix='{}'.format(settings.API_DEVELOP_PREFIX))
 
 

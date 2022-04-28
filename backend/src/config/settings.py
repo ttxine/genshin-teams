@@ -31,3 +31,14 @@ PASSWORD_RESET_TOKEN_SECRET_KEY = os.environ.get('PASSWORD_RESET_TOKEN_SECRET_KE
 
 
 ALLOWED_FORMAT_EXTENSIONS = 'jpg', 'jpeg', 'png'
+
+MAIL_USERNAME=os.environ.get('MAIL_USERNAME')
+MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD')
+MAIL_FROM=os.environ.get('MAIL_FROM')
+MAIL_PORT=os.environ.get('MAIL_PORT')
+MAIL_SERVER=os.environ.get('MAIL_SERVER', '')
+MAIL_FROM_NAME="Genshin Teams"
+MAIL_TLS=True
+MAIL_SSL=False
+TEMPLATE_FOLDER='src/templates'
+VALIDATE_CERTS=True
