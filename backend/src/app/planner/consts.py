@@ -87,6 +87,7 @@ class Stat(EnumLabelsMixin, StrEnum):
     HYDRO_DMG_BONUS = 'hydro%', 'Hydro DMG Bonus%'
     PYRO_DMG_BONUS = 'pyro%', 'Pyro DMG Bonus%'
     CRYO_DMG_BONUS = 'cryo%', 'Hydro DMG Bonus%'
+    COMMON_DMG_BONUS = 'common%', 'Common DMG Bonus'
     PHYS_DMG_RES = 'physr%', 'Physical DMG RES%'
     ANEMO_DMG_RES = 'anemor%', 'Anemo DMG RES%'
     GEO_DMG_RES = 'geor%', 'Geo DMG RES%'
@@ -98,6 +99,7 @@ class Stat(EnumLabelsMixin, StrEnum):
     CD_REDUCTION = 'cdr%', 'CD Reduction'
     INCOMING_HEAL_BONUS = 'iheal%', 'Incoming Healing Bonus'
     SHIELD_STRENGTH = 'shield%', 'Shield Strength'
+    HEAL = 'heal%', 'Heal'
 
 
 class DamageType(EnumLabelsMixin, StrEnum):

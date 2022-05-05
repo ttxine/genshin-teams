@@ -61,10 +61,11 @@ class ModelService:
     async def all(
         cls,
         offset: int | None = None,
-        limit: int | None = None
+        limit: int | None = None,
+        **kwargs
     ) -> list[Model]:
         return await cls.model.objects.select_all(follow=True)\
-            .offset(offset).limit(limit).all()
+            .offset(offset).limit(limit).all(**kwargs)
 
     @classmethod
     async def create(cls, schema: CreateSchema | None = None, **kwargs) -> Model:

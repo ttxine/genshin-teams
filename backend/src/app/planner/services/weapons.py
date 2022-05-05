@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from ormar import Model
 
@@ -7,10 +7,6 @@ from src.app.base.uploads import get_weapon_image_upload_path
 from src.utils.images import upload_image
 from src.app.planner.models import weapons as models
 from src.app.planner.schemas import weapons as schemas
-
-
-# class WeaponMainStatTierService(ModelService):
-#     model: Type[Model] = models.WeaponMainStatTier
 
 
 class WeaponMainStatLevelMultiplierService(ModelService):
@@ -38,10 +34,12 @@ class WeaponMainStatService(ModelService):
             pk=schema.core
         )
         start_value = core.start_value
+
+        rarity = 3 if core.rarity <= 3 else core.rarity
         level_multiplier = await WeaponMainStatLevelMultiplierService().get_object_or_404(
             level=schema.level,
             tier=core.tier,
-            rarity=core.rarity
+            rarity=rarity
         )
         if schema.ascension > 0:
             ascension_value = (await WeaponMainStatAscensionValueService().get_object_or_404(
@@ -74,6 +72,7 @@ class WeaponSubStatService(ModelService):
         core: models.WeaponSubStatCore = await WeaponSubStatCoreService().get_object_or_404(
             pk=schema.core
         )
+
         start_value = core.start_value
         level_multiplier = await WeaponSubStatLevelMultiplierService().get_object_or_404(
             level=schema.level
@@ -93,6 +92,34 @@ class WeaponSubStatService(ModelService):
 
 class WeaponPassiveAbilityCoreService(ModelService):
     model: Type[Model] = models.WeaponPassiveAbilityCore
+
+    @classmethod
+    async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True) -> dict[str, Any]:
+        return schema.dict(exclude={'stat_cores'})
+
+    @classmethod
+    async def create(cls, schema: CreateSchema | None = None, **kwargs) -> Model:
+        async with cls.model.Meta.database.transaction():
+            core = await super().create(schema, **kwargs)
+            for stat_core_schema in schema.stat_cores:
+                stat_core_schema = schemas.WeaponPassiveAbilityStatCore(
+                    **stat_core_schema.dict(),
+                    passive_ability_core=core.id
+                )
+                stat_core = await WeaponPassiveAbilityStatCoreService.create(stat_core_schema)
+                for refinement in range(1, 6):
+                    pas_schema = schemas.WeaponPassiveAbilityStat(
+                        core=stat_core.id,
+                        refinement=refinement
+                    )
+                    await WeaponPassiveAbilityStatService.create(pas_schema)
+            for refinement in range(1, 6):
+                schema = schemas.WeaponPassiveAbilityCU(
+                    core=core.id,
+                    refinement=refinement
+                )
+                await WeaponPassiveAbilityService.create(schema)
+        return core
 
 
 class WeaponPassiveAbilityStatCoreService(ModelService):
@@ -142,19 +169,9 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
         else:
             return qs
 
-    @classmethod
-    async def create(cls, schema: schemas.WeaponPassiveAbilityStatCoreCU, **kwargs):
-        return await super().create(schema, **kwargs)
-
-    @classmethod
-    async def update(cls, schema: UpdateSchema | None = None, **kwargs):
-        return await super().update(schema, **kwargs)
-
 
 class WeaponPassiveAbilityService(ModelService):
     model: Type[Model] = models.WeaponPassiveAbility
-    create_schema = schemas.WeaponPassiveAbilityCU
-    update_schema = schemas.WeaponPassiveAbilityCU
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
@@ -220,15 +237,19 @@ class WeaponCoreService(ModelService):
     model: Type[Model] = models.WeaponCore
 
     @classmethod
+    async def all(cls, offset: int | None = None, limit: int | None = None, **kwargs) -> list[Model]:
+        return await super().all(offset, limit, **kwargs)
+
+    @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
         fa_img = schema.first_ascension_image
         sa_img = schema.second_ascension_image
 
         upload_path = get_weapon_image_upload_path(schema.name)
-        fa_image_path = upload_image(upload_path, fa_img, (250, 250))
+        fa_image_path = upload_image(upload_path, fa_img, (160, 160))
 
         if sa_img:
-            sa_image_path = upload_image(upload_path, sa_img, (250, 250))
+            sa_image_path = upload_image(upload_path, sa_img, (160, 160))
         else:
             sa_image_path = None
 
@@ -283,6 +304,12 @@ class WeaponService(ModelService):
         ]).get_or_none(**kwargs)
 
     @classmethod
+    async def create(cls, schema: CreateSchema | None = None, **kwargs) -> Model:
+        weapon = await super().create(schema, **kwargs)
+        await weapon.load_all(follow=True)
+        return weapon
+
+    @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
         core: models.WeaponCore = await WeaponCoreService().get_object_or_404(pk=schema.core)
 
@@ -306,22 +333,10 @@ class WeaponService(ModelService):
             **schema.dict(
                 exclude={'core', 'main_stat', 'sub_stat', 'passive_ability'}
             ),
-            core=core.id,
-            main_stat=main_stat.id,
-            sub_stat=sub_stat.id,
-            passive_ability=passive_ability.id
+            core=core,
+            main_stat=main_stat,
+            sub_stat=sub_stat,
+            passive_ability=passive_ability
         )
 
         return await super()._pre_save(to_save, exclude_none)
-
-
-weapon_sub_stat_core_service = WeaponSubStatCoreService()
-weapon_sub_stat_service = WeaponSubStatService()
-weapon_main_stat_core_service = WeaponMainStatCoreService()
-weapon_main_stat_service = WeaponMainStatService()
-weapon_passive_ability_core_service = WeaponPassiveAbilityCoreService()
-weapon_passive_ability_stat_core_service = WeaponPassiveAbilityStatCoreService()
-weapon_passive_ability_service = WeaponPassiveAbilityService()
-weapon_passive_ability_stat_service = WeaponPassiveAbilityStatService()
-weapon_core_service = WeaponCoreService()
-weapon_service = WeaponService()

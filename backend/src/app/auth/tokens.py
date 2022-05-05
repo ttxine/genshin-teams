@@ -1,33 +1,50 @@
 from datetime import datetime, timezone
-from jose import jwt, JWTError
 
-from src.app.auth.models import BlacklistedToken
-from src.app.auth.jwt import generate_access_token
+from jose import jwt, JWTError
+from fastapi import HTTPException
+
 from src.app.user.models import User
-from src.app.user.services import user_service
+from src.app.auth.jwt import generate_access_token
+from src.app.user.services import UserService
 from src.config import settings
 
 
 class Token:
-
-    __slots__ = 'token', 'payload'
-
-    _token_type: str
-    _secret_key: str
+    _token_type: str = None
+    _secret_key: str = None
 
     def __init__(self, token: str) -> None:
         self._token = token
-        self._payload = jwt.decode(
-            token,
-            self._secret_key,
-            settings.ALGORITHM
-        )
 
-    def _get(self, key: str) -> str:
+        if self._secret_key:
+            try:
+                self._payload = jwt.decode(
+                    token, self._secret_key, settings.ALGORITHM
+                )
+            except JWTError:
+                raise HTTPException(status_code=403, detail='Invalid token')
+        else:
+            self._payload = {}
+
+    @property
+    def user_id(self):
+        return int(self._get_sub())
+
+    async def verify(self) -> User:
+        user: User = await UserService.get_object_or_404(pk=self.user_id)
+
+        if (not self._is_token_type_valid() or
+                not self._is_iat_valid(user.invalidate_before)):
+            raise HTTPException(status_code=403, detail='Invalid token')
+
+        return user
+
+    def _get(self, key) -> str:
         try:
             val = self._payload[key]
         except KeyError:
-            raise JWTError('Token hasn\'t {}'.format(key))
+            raise HTTPException(status_code=403, detail='Invalid token')
+
         return val
 
     def _get_token_type(self) -> str:
@@ -36,8 +53,8 @@ class Token:
     def _get_exp(self) -> str:
         return self._get('exp')
 
-    def _get_jti(self) -> str:
-        return self._get('jti')
+    # def _get_jti(self) -> str:
+    #     return self._get('jti')
 
     def _get_sub(self) -> str:
         return self._get('sub')
@@ -45,42 +62,8 @@ class Token:
     def _get_iat(self) -> str:
         return self._get('iat')
 
-    @property
-    def user_id(self) -> int:
-        return int(self._get_sub())
-
-    async def verify(self) -> None:
-        user: User = await user_service.get_object_or_404(pk=self.user_id)
-        if not self._is_iat_valid(user.invalidate_before):
-            raise JWTError('Invalid token')
-        self.validate_token_type()
-        await self.check_blacklist()
-
-    def validate_token_type(self) -> None:
-        token_type = self._get_token_type()
-        if self._token_type != token_type:
-            raise JWTError('Invalid token type')
-
-    async def is_blacklisted(self) -> bool:
-        return await BlacklistedToken.objects.filter(
-            user=self._get_sub(),
-            jti=self._get_jti()
-        ).exists()
-
-    async def blacklist(self) -> BlacklistedToken:
-        blacklisted_token = await BlacklistedToken.objects.get_or_create(
-            user=self.user_id,
-            token=self._token,
-            jti=self._get_jti(),
-            expires_at=self._get_exp(),
-        )
-        return blacklisted_token
-
-    async def check_blacklist(self) -> None:
-        blacklisted = await self.is_blacklisted()
-
-        if blacklisted:
-            raise JWTError('Token is blacklisted')
+    def _is_token_type_valid(self) -> bool:
+        return self._get_token_type() == self._token_type
 
     def _is_iat_valid(self, invalidate_before: datetime) -> bool:
         iat_datetime = datetime.fromtimestamp(self._get_iat(), timezone.utc)\

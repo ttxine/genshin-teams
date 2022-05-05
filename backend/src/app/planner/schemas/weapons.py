@@ -15,15 +15,11 @@ WeaponFromModel = weapons.Weapon.get_pydantic(exclude={
     'passive_ability'
 })
 
-WeaponPassiveAbilityStatCoreFromModel = weapons.WeaponPassiveAbilityStatCore\
-    .get_pydantic(exclude={'id', 'core', 'refinement_scale'})
-
-WeaponPassiveAbilityCore = weapons.WeaponPassiveAbilityCore.get_pydantic(
-    exclude={'id'}
-)
+WeaponPassiveAbilityStatCoreCU = weapons.WeaponPassiveAbilityStatCore\
+    .get_pydantic(exclude={'id', 'core', 'refinement_scale', 'passive_ability_core'})
 
 WeaponPassiveAbilityFromModel = weapons.WeaponPassiveAbility.get_pydantic(
-    exclude={'id', 'core', 'passive_ability', 'description'}
+    exclude={'id', 'core', 'description'}
 )
 
 WeaponCoreFromModel = weapons.WeaponCore.get_pydantic(exclude={
@@ -72,7 +68,7 @@ class WeaponPassiveAbilityStat(WeaponPassiveAbilityStatFromModel):
     )
 
 
-class WeaponPassiveAbilityStatCoreCU(WeaponPassiveAbilityStatCoreFromModel):
+class WeaponPassiveAbilityStatCore(WeaponPassiveAbilityStatCoreCU):
     passive_ability_core: int = Body(
         ...,
         description='ID of passive ability core',
@@ -112,14 +108,7 @@ class WeaponPassiveAbilityR(weapons.WeaponPassiveAbility.get_pydantic()):
     stats: list[weapons.WeaponPassiveAbilityStat.get_pydantic()]
 
 
-class WeaponR(
-    weapons.Weapon.get_pydantic(exclude={
-        'passive_ability',
-        'core__main_stat_core',
-        'core__sub_stat_core',
-        'core__passive_ability_core'
-    })
-):
+class WeaponR(weapons.Weapon.get_pydantic(exclude={'passive_ability'})):
     passive_ability: WeaponPassiveAbilityR
 
 
@@ -136,13 +125,17 @@ class Weapon(WeaponFromModel):
         value_error = ValueError('Level doesn\'t match ascension')
         if ascension == 0 and level > 20:
             raise value_error
-        elif ascension < 2 and level > 40:
+        elif ascension == 1 and (level > 40 or level < 20):
             raise value_error
-        elif level > ascension * 10 + 30:
+        elif ascension > 1 and (level > ascension * 10 + 30 or level < ascension * 10 + 20):
             raise value_error
         return values
 
 
+class WeaponPassiveAbilityCore(weapons.WeaponPassiveAbilityCore.get_pydantic(
+    exclude={'id'}
+)):
+    stat_cores: list[WeaponPassiveAbilityStatCoreCU]
+
+
 WeaponCoreForm = model_form_factory(model=WeaponCoreCU)
-# class WeaponPassiveAbilityR(WeaponPassiveAbilityFromModel):
-#     passive_ability_stats: list[weapons.WeaponPassiveAbilityStat]

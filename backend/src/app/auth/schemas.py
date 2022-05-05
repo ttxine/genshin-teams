@@ -1,22 +1,27 @@
-from pydantic import BaseModel
+from fastapi import Body, UploadFile
+from pydantic import BaseModel, EmailStr
 
 
-class AuthUser(BaseModel):
+class UserBase(BaseModel):
     username: str
-    password: str
+    password: str = Body(..., min_length=8, max_length=72)
+
+
+class UserLogin(UserBase):
+    pass
+
+
+class UserCreate(UserLogin):
+    email: EmailStr
 
 
 class AccessToken(BaseModel):
     access_token: str
 
 
-class AuthTokens(AccessToken):
-    refresh_token: str
-
-
 class PasswordReset(BaseModel):
-    new_password: str
+    raw_new_password: str
 
 
 class PasswordChange(PasswordReset):
-    old_password: str
+    raw_old_password: str

@@ -13,6 +13,7 @@ class CharacterBonusStatCore(StatCore):
 
     id: int = ormar.Integer(primary_key=True)
 
+
 class CharacterCore(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'character_cores'
@@ -74,7 +75,7 @@ class Character(ormar.Model):
         tablename: str = 'characters'
 
     id: int = ormar.Integer(primary_key=True)
-    character_core: CharacterCore = ormar.ForeignKey(CharacterCore, nullable=False)
+    character_core: CharacterCore = ormar.ForeignKey(CharacterCore, skip_reverse=True, nullable=False)
     level: int = ormar.SmallInteger(minimum=1, maximum=90)
     ascension: int = ormar.SmallInteger(minimum=0, maximum=6)
     health: float = ormar.Float(minimum=0)
@@ -87,9 +88,9 @@ class Character(ormar.Model):
     energy_recharge: float = ormar.Float(minimum=0, default=1)
     healing_bonus: float = ormar.Float(minimum=0, default=0)
 
-    bonus_stat: CharacterBonusStat = ormar.ForeignKey(CharacterBonusStat, nullable=False)
+    bonus_stat: CharacterBonusStat = ormar.ForeignKey(CharacterBonusStat, skip_reverse=True, nullable=False)
 
-    weapon: Weapon = ormar.ForeignKey(Weapon, nullable=False)
+    weapon: Weapon = ormar.ForeignKey(Weapon, skip_reverse=True, nullable=False)
 
     phys_damage_bonus: float = ormar.Float(minimum=0, default=0)
     anemo_damage_bonus: float = ormar.Float(minimum=0, default=0)
@@ -112,11 +113,11 @@ class Character(ormar.Model):
     incoming_healing_bonus: float = ormar.Float(minimum=0, default=0)
     shield_strength: float = ormar.Float(minimum=0, default=0)
 
-    artifact_flower: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_flower', nullable=True)
-    artifact_plume: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_plume', nullable=True)
-    artifact_sands: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_sands', nullable=True)
-    artifact_goblet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_goblet', nullable=True)
-    artifact_circlet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_circlet', nullable=True)
+    artifact_flower: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_flower', skip_reverse=True, nullable=True)
+    artifact_plume: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_plume', skip_reverse=True, nullable=True)
+    artifact_sands: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_sands', skip_reverse=True, nullable=True)
+    artifact_goblet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_goblet', skip_reverse=True, nullable=True)
+    artifact_circlet: Artifact | None = ormar.ForeignKey(Artifact, related_name='characters_as_circlet', skip_reverse=True, nullable=True)
 
     total_attack: float = ormar.Float(minimum=0)
     total_health: float = ormar.Float(minimum=0)

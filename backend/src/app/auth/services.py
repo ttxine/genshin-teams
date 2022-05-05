@@ -1,90 +1,104 @@
 from datetime import datetime
-from typing import Type
 
 import ormar
-from jose import JWTError
-from fastapi import BackgroundTasks, HTTPException, Request, Response, status
+from fastapi import BackgroundTasks, HTTPException, Request, Response
 
-from src.core.security import get_password_hash, verify_password
+from src.app.auth.tokens import (
+    AccessToken,
+    EmailConfirmationToken,
+    PasswordResetToken,
+    RefreshToken
+)
 from src.app.user.models import User
-from src.app.user.services import user_service
-from src.app.user.schemas import UserCreate
+from src.app.user.services import UserService
 from src.app.auth.jwt import generate_refresh_token
-from src.app.auth.exceptions import CredentialsException, InvalidTokenException
-from src.app.auth.tokens import AccessToken, EmailConfirmationToken, PasswordResetToken, RefreshToken, Token
+from src.core.security import get_password_hash, verify_password
+from src.app.auth.schemas import PasswordChange, UserCreate, UserLogin
 from src.utils.send_mail import send_email_confirmation, send_password_reset
 
 
-async def validate_token(raw_token: str, token_class: Type[Token]) -> tuple[int, Token]:
-    try:
-        token = token_class(raw_token)
-        await token.verify()
-        user_id = token.user_id
-    except JWTError:
-        raise InvalidTokenException()
-    return user_id, token
-
-
-async def register_user(schema: UserCreate, task: BackgroundTasks) -> None:
+async def register_user(user: UserCreate, task: BackgroundTasks) -> None:
     user_exists = await User.objects.filter(
         ormar.or_(username=user.username, email=user.email)
     ).exists()
+
     if user_exists:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,
             detail='User with the entered data already exists'
         )
-    user = await user_service.create(schema)
+
+    user_db = await UserService.create(
+        **user.dict(exclude={'password'}),
+        hashed_password=get_password_hash(user.password)
+    )
+
     task.add_task(
-        send_email_confirmation, user
+        send_email_confirmation, user_db
     )
 
 
-async def authenticate_user(username: str, raw_password: str) -> User:
-    user: User = await user_service.get_object_or_none(username=username)
-    if not user or not verify_password(raw_password, user.hashed_password):
+async def confirm_user_email(token: str):
+    email_confirmation_token = EmailConfirmationToken(token)
+    user: User = await email_confirmation_token.verify()
+
+    await user.update(email_confirmed=True)
+
+
+async def authenticate_user(schema: UserLogin) -> User:
+    user: User = await UserService.get_object_or_none(username=schema.username)
+
+    if not user or not verify_password(schema.password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=401,
+            detail='Incorrect username or password',
+            headers={
+                'WWW-Authenticate': 'Bearer'
+            }
         )
+
     if not user.email_confirmed and not user.is_superuser:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=403,
             detail='Email not confirmed'
         )
+
     return user
 
 
-async def logout_user(token: str, request: Request, response: Response) -> None:
-    _, access_token = await validate_token(token, AccessToken)
+async def logout_user(
+    token: str,
+    request: Request, response: Response
+) -> None:
+    access_token = AccessToken(token)
+    await access_token.verify()
 
     refresh_token_cookie = request.cookies.get('rt')
-    _, refresh_token = await validate_token(refresh_token_cookie, RefreshToken)
+    if refresh_token_cookie:
+        refresh_token = RefreshToken(refresh_token_cookie)
+        await refresh_token.verify()
 
-    await access_token.blacklist()
-    await refresh_token.blacklist()
-
-    response.delete_cookie(key='rt', secure=True, httponly=True)
+        response.delete_cookie(key='rt', secure=True, httponly=True)
 
 
 async def logout_user_from_all_devices(token: str) -> None:
-    user_id, _ = await validate_token(token, AccessToken)
-    user = await user_service.get_object_or_404(pk=user_id)
+    access_token = AccessToken(token)
+    user = await access_token.verify()
 
     await user.update(invalidate_before=datetime.utcnow())
 
 
-async def change_user_password(token: str, old_raw_password: str, new_raw_password: str) -> None:
-    user_id, access_token = await validate_token(token, AccessToken)
-    user = await user_service.get_object_or_404(pk=user_id)
-    if not verify_password(old_raw_password, user.hashed_password):
+async def change_user_password(token: str, schema: PasswordChange) -> None:
+    access_token = AccessToken(token)
+    user = await access_token.verify()
+
+    if not verify_password(schema.raw_old_password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=403,
             detail='Wrong old password'
         )
-    new_hashed_password = get_password_hash(new_raw_password)
-    await access_token.blacklist()
+
+    new_hashed_password = get_password_hash(schema.raw_new_password)
     await user.update(
         hashed_password=new_hashed_password,
         invalidate_before=datetime.utcnow()
@@ -92,35 +106,36 @@ async def change_user_password(token: str, old_raw_password: str, new_raw_passwo
 
 
 async def refresh_access_token(token: str, response: Response) -> dict:
-    user_id, refresh_token = await validate_token(token, RefreshToken)
-
+    refresh_token = RefreshToken(token)
+    user: User = await refresh_token.verify()
     access_token = refresh_token.refresh_access_token()
 
-    await refresh_token.blacklist()
-    new_refresh_token = generate_refresh_token(user_id)
+    new_refresh_token = generate_refresh_token(user.id)
 
-    response.set_cookie(key='rt', value=new_refresh_token, httponly=True, secure=True)
+    response.set_cookie(
+        key='rt',
+        value=new_refresh_token,
+        httponly=True,
+        secure=True
+    )
+
     return {'access_token': access_token}
 
 
-async def confirm_user_email(token: str) -> None:
-    user_id, email_confirmation_token = await validate_token(token, EmailConfirmationToken)
-    await email_confirmation_token.blacklist()
-    await user_service.confirm(pk=user_id)
-
-
 async def recover_user_password(email: str, task: BackgroundTasks) -> None:
-    user = await user_service.get_object_or_404(email=email)
+    user = await UserService.get_object_or_404(email=email)
+
     task.add_task(
         send_password_reset, user
     )
 
 
 async def reset_user_password(token: str, new_raw_password: str) -> None:
-    user_id, password_reset_token = await validate_token(token, PasswordResetToken)
-    await password_reset_token.blacklist()
-    user: User = await user_service.get_object_or_404(pk=user_id)
+    user: User = await PasswordResetToken(token).verify()
+
+    user: User = await UserService.get_object_or_404(pk=user.id)
     new_hashed_password = get_password_hash(new_raw_password)
+
     await user.update(
         hashed_password=new_hashed_password,
         invalidate_before=datetime.utcnow()
@@ -131,5 +146,9 @@ def get_refresh_token_from_cookie(request: Request) -> str:
     try:
         refresh_token = request.cookies['rt']
     except KeyError:
-        raise CredentialsException()
+        raise HTTPException(
+            status_code=401,
+            detail='Invalid token',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
     return refresh_token

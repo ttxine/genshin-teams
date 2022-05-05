@@ -5,12 +5,24 @@ from src.app.base.services import get_pydantic
 from src.app.base.forms import model_form_factory
 from src.app.planner.consts import Stat
 from src.app.planner.models import characters as models
+from src.app.planner.models.artifacts import Artifact
 
 
 CharacterCoreFromModel = get_pydantic(models.CharacterCore, 'CharacterCore', exclude={'id', 'image', 'bonus_stat_core', 'characters'})
 CharacterLevelMultiplier = get_pydantic(models.CharacterLevelMultiplier, 'CharacterLevelMultiplier', exclude={'id'})
 CharacterAscension = get_pydantic(models.CharacterAscension, 'CharacterAscension', exclude={'id'})
 CharacterFromModel = get_pydantic(models.Character, 'Character', include={'level', 'ascension'})
+CharacterBonusStat = get_pydantic(models.CharacterBonusStat, 'CharacterBonusStat')
+
+
+class CharacterOut(models.Character.get_pydantic()):
+    character_core: models.CharacterCore
+    artifact_flower: Artifact
+    artifact_plume: Artifact
+    artifact_sands: Artifact
+    artifact_goblet: Artifact
+    artifact_circlet: Artifact
+    bonus_stat: CharacterBonusStat
 
 
 class CharacterCore(CharacterCoreFromModel):

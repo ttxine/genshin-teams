@@ -4,14 +4,14 @@ from src.core.db import BaseMeta
 from src.app.planner.consts import StatType, WeaponType
 from src.app.planner.models.attributes import StatCore
 
-# Weapon - Main Stat (Base Attack)
+
 class WeaponMainStatLevelMultiplier(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_main_stat_level_multipliers'
 
     id: int = ormar.Integer(primary_key=True)
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5)
-    tier: int = ormar.SmallInteger(minimum=1, maximum=4)
+    tier: int = ormar.SmallInteger()
     level: int = ormar.SmallInteger(minimum=1, maximum=90)
     multiplier: float = ormar.Float(minimum=0)
 
@@ -33,7 +33,7 @@ class WeaponMainStatCore(ormar.Model):
     id: int = ormar.Integer(primary_key=True)
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5)
     start_value: float = ormar.Float(minimum=0)
-    tier: int = ormar.SmallInteger(minimum=1, maximum=4)
+    tier: int = ormar.SmallInteger()
     is_exception: bool = ormar.Boolean(default=False)
 
 
@@ -47,7 +47,7 @@ class WeaponMainStat(ormar.Model):
     ascension: int = ormar.SmallInteger(minimum=0, maximum=6)
     value: float = ormar.Float(minimum=0)
 
-# Weapon - Sub Stat
+
 class WeaponSubStatLevelMultiplier(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_sub_stat_level_multipliers'
@@ -73,7 +73,7 @@ class WeaponSubStat(ormar.Model):
     level: int = ormar.SmallInteger(minimum=1, maximum=90)
     value: float = ormar.Float(minimum=0)
 
-# Weapon - Passive Ability
+
 class WeaponPassiveAbilityCore(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_passive_ability_cores'
@@ -90,6 +90,7 @@ class WeaponPassiveAbilityStatCore(StatCore):
     id: int = ormar.Integer(primary_key=True)
     passive_ability_core: WeaponPassiveAbilityCore = ormar.ForeignKey(WeaponPassiveAbilityCore, skip_reverse=True, nullable=False)
     stat_type: str = ormar.String(max_length=5, choices=list(StatType))
+    is_special: bool = ormar.Boolean(default=False)
     is_team_buff: bool = ormar.Boolean(default=False)
     max_value: float = ormar.Float(minimum=0)
     refinement_scale: float = ormar.Float(minimum=0)
@@ -119,7 +120,7 @@ class WeaponPassiveAbilityStat(ormar.Model):
         await self.core.load()
         return '{}%'.format(round(self.value * 100)) if '%' in self.core.stat else str(round(self.value))
 
-# Weapon - Core
+
 class WeaponCore(ormar.Model):
     class Meta(BaseMeta):
         tablename: str = 'weapon_cores'

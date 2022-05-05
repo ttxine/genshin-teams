@@ -26,17 +26,16 @@ def upload_image(
         )
 
     image = _resize_image(file.file, size)
-    image = image.convert('RGB')
 
-    image_path = '{0}{1}.jpeg'.format(upload_path, filename)
+    image_path = '{0}{1}.png'.format(upload_path, filename)
     if os.path.exists(image_path):
-        image_path = '{0}{1}_{2}.jpeg'.format(
+        image_path = '{0}{1}_{2}.png'.format(
             upload_path,
             filename,
             ''.join(sample(string.ascii_letters, 10))
         )
 
-    image.save(image_path, 'JPEG', quality=95)
+    image.save(image_path, 'PNG')
     return image_path
 
 

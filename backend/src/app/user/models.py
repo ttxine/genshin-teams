@@ -15,7 +15,6 @@ class User(ormar.Model):
     email: str = ormar.String(max_length=256, nullable=False, unique=True)
     email_confirmed: bool = ormar.Boolean(default=False, nullable=False)
     hashed_password: str = ormar.String(max_length=1000, nullable=False)
-    avatar: str | None = ormar.String(max_length=255, nullable=True)
     date_joined: datetime = ormar.DateTime(server_default=func.now())
     is_active: bool = ormar.Boolean(default=True, nullable=False)
     invalidate_before: datetime = ormar.DateTime(server_default=func.now())

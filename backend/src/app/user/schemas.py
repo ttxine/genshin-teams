@@ -22,10 +22,6 @@ class UserCreate(UserBase):
     password: str = Body(..., min_length=8, max_length=72)
 
 
-class UserUpdate(BaseModel):
-    avatar: UploadFile | None = File(None)
-
-
 UserOut = User.get_pydantic(exclude={
     'hashed_password',
     'is_superuser',

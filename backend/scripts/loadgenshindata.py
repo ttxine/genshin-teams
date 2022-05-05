@@ -5,9 +5,11 @@ from typing import Any, Type
 import httpx
 from ormar import Model
 from ormar.exceptions import ModelError
-from scripts.exceptions import CommandException
 
+from scripts.exceptions import CommandException
 from src.app.planner.models import artifacts, weapons, characters
+from src.app.planner.services.weapons import WeaponMainStatService, WeaponSubStatService
+from src.app.planner.schemas import weapons as weapon_schemas
 
 INGAME_PROPS = {
     'FIGHT_PROP_HP': 'hp',
@@ -81,32 +83,42 @@ class GenshinDataCollector:
                 )
 
 
-class WeaponMainStatDataCollector(GenshinDataCollector):
+class WeaponMainStatCoreDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponExcelConfigData.json'
     _model: Type[Model] = weapons.WeaponMainStatCore
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        rarity = int(raw_obj['RankLevel'])
-        raw_rarity = int(raw_obj['WeaponProp'][0]['Type'][-3])
-        raw_tier = int(raw_obj['WeaponProp'][0]['Type'][-1])
+        rarity = int(raw_obj['rankLevel'])
+        raw_rarity = int(raw_obj['weaponProp'][0]['type'][-3])
+        tier = int(raw_obj['weaponProp'][0]['type'][-3:])
 
         if rarity > raw_rarity + 2:
             return None
 
-        if (raw_rarity, raw_tier) in ((2, 3), (3, 3)):
-            tier = 4
-        else:
-            tier = raw_tier + 1 if raw_tier < 3 else 1
-
         obj = {
             'rarity': rarity,
-            'start_value': float(raw_obj['WeaponProp'][0]['InitValue']),
+            'start_value': float(raw_obj['weaponProp'][0]['initValue']),
             'tier': tier,
             'is_exception': False
         }
 
         return super()._as_model(obj)
+
+
+class WeaponSubStatCoreDataCollector(GenshinDataCollector):
+    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponExcelConfigData.json'
+    _model: Type[Model] = weapons.WeaponSubStatCore
+
+    @classmethod
+    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
+        ingame_prop = raw_obj['weaponProp'][1].get('propType')
+        if raw_obj['weaponProp'][1].get('propType'):
+            obj = {
+                'stat': INGAME_PROPS[ingame_prop],
+                'start_value': float(raw_obj['weaponProp'][1]['initValue']),
+            }
+            return super()._as_model(obj)
 
 
 class WeaponAscensionValueDataCollector(GenshinDataCollector):
@@ -115,15 +127,15 @@ class WeaponAscensionValueDataCollector(GenshinDataCollector):
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        ascension = raw_obj.get('PromoteLevel')
+        ascension = raw_obj.get('promoteLevel')
 
         if not ascension:
             return None
 
         obj = {
             'ascension': ascension,
-            'rarity': int(str(raw_obj['WeaponPromoteId'])[2]),
-            'ascension_value': float(raw_obj['AddProps'][0]['Value'])
+            'rarity': int(str(raw_obj['weaponPromoteId'])[2]),
+            'ascension_value': float(raw_obj['addProps'][0]['value'])
         }
 
         return super()._as_model(obj)
@@ -137,7 +149,7 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
         for raw_obj in data:
             for roll in range(1, 7):
-                raw_obj['Roll'] = roll
+                raw_obj['roll'] = roll
                 obj = cls._as_model(raw_obj)
                 if obj is not None:
                     await cls._model.objects.get_or_create(
@@ -146,13 +158,13 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        raw_id = str(raw_obj['Id'])
+        raw_id = str(raw_obj['id'])
         rarity = int(raw_id[0])
 
         if rarity < 6:
-            prop = raw_obj['PropType']
-            value = raw_obj['PropValue']
-            roll = raw_obj['Roll']
+            prop = raw_obj['propType']
+            value = raw_obj['propValue']
+            roll = raw_obj['roll']
 
             obj = {
                 'rarity': rarity,
@@ -171,9 +183,9 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
     @classmethod
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
         for raw_obj in data:
-            if raw_obj.get('Rank'):
-                for prop in raw_obj['AddProps']:
-                    obj = cls._as_model(prop, rarity=raw_obj['Rank'], level=raw_obj['Level'])
+            if raw_obj.get('rank'):
+                for prop in raw_obj['addProps']:
+                    obj = cls._as_model(prop, rarity=raw_obj['rank'], level=raw_obj['level'])
                     if obj is not None:
                         await cls._model.objects.get_or_create(
                             **obj.dict(exclude={'id'})
@@ -185,8 +197,8 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
             obj = {
                 'rarity': kwargs['rarity'],
                 'level': kwargs['level'] - 1,
-                'stat': INGAME_PROPS[raw_obj['PropType']],
-                'value': raw_obj['Value']
+                'stat': INGAME_PROPS[raw_obj['propType']],
+                'value': raw_obj['value']
             }
             return super()._as_model(obj)
 
@@ -198,7 +210,7 @@ class CharacterLevelMultiplierDataCollector(GenshinDataCollector):
     @classmethod
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
         for raw_obj in data:
-            if raw_obj['Level'] <= 90:
+            if raw_obj['level'] <= 90:
                 for rarity_index in range(1, 3):
                     obj = cls._as_model(raw_obj, index=rarity_index)
                     if obj is not None:
@@ -209,9 +221,9 @@ class CharacterLevelMultiplierDataCollector(GenshinDataCollector):
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
         obj = {
-            'level': raw_obj['Level'],
-            'rarity': int(raw_obj['CurveInfos'][kwargs['index']]['Type'][-1]),
-            'multiplier': raw_obj['CurveInfos'][kwargs['index']]['Value']
+            'level': raw_obj['level'],
+            'rarity': int(raw_obj['curveInfos'][kwargs['index']]['type'][-1]),
+            'multiplier': raw_obj['curveInfos'][kwargs['index']]['value']
         }
         return super()._as_model(obj)
 
@@ -261,6 +273,7 @@ async def collect_character_ascension():
     print("Character ascension data collected successfully.")
 
 
+# TODO:
 # async def collect_elemental_resonance():
 #     resonances = [
 #         {
@@ -278,10 +291,90 @@ async def collect_character_ascension():
 #     print("Character ascension data collected successfully.")
 
 
+class WeaponLevelMultipliersDataCollector(GenshinDataCollector):
+    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponCurveExcelConfigData.json'
+    _model: Type[Model] = weapons.WeaponMainStatLevelMultiplier
+
+    @classmethod
+    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
+        for raw_objs in data:
+            if raw_objs['level'] <= 90:
+                for raw_obj in raw_objs['curveInfos']:
+                    if raw_obj['type'][-10:-4] == 'ATTACK':
+                        obj = cls._as_model(raw_obj, level=raw_objs['level'])
+                        if obj is not None:
+                            await cls._model.objects.get_or_create(
+                                **obj.dict(exclude={'id'})
+                            )
+                    else:
+                        await weapons.WeaponSubStatLevelMultiplier.objects\
+                            .get_or_create(
+                                level=raw_objs['level'],
+                                multiplier=raw_obj['value']
+                            )
+
+    @classmethod
+    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
+        obj = {
+            'tier': int(raw_obj['type'][-3:]),
+            'rarity': int(raw_obj['type'][-3]) + 2,
+            'multiplier': float(raw_obj['value']),
+            'level': kwargs['level']
+        }
+        return super()._as_model(obj)
+
+
+async def collect_weapon_main_stat():
+    cores = await weapons.WeaponMainStatCore.objects.all()
+    for core in cores:
+        if core.rarity < 3:
+            level_range = 71
+            ascension_range = 5
+        else:
+            level_range = 91
+            ascension_range = 7
+        for level in range(1, level_range):
+            for ascension in range(0, ascension_range):
+                schema = weapon_schemas.WeaponMainStat(
+                    level=level,
+                    ascension=ascension,
+                    core=core.id
+                )
+                await WeaponMainStatService.get_or_create(
+                    schema,
+                    level=level,
+                    ascension=ascension,
+                    core=core.id
+                )
+
+    print('Weapon Main Stat data has been loaded.')
+
+
+async def collect_weapon_sub_stat():
+    cores = await weapons.WeaponSubStatCore.objects.all()
+    for core in cores:
+        for level in range(1, 91):
+            schema = weapon_schemas.WeaponSubStat(
+                level=level,
+                core=core.id
+            )
+            await WeaponSubStatService.get_or_create(
+                schema,
+                level=level,
+                core=core.id
+            )
+
+    print('Weapon Sub Stat data has been loaded.')
+
+
 async def loadgenshindata():
     tasks = [
-        WeaponMainStatDataCollector.collect(),
+        WeaponMainStatCoreDataCollector.collect(),
+        WeaponSubStatCoreDataCollector.collect(),
         WeaponAscensionValueDataCollector.collect(),
+        WeaponLevelMultipliersDataCollector.collect(),
+        collect_weapon_sub_stat(),
+        collect_weapon_main_stat(),
         ArtifactSubStatDataCollector.collect(),
         ArtifactMainStatDataCollector.collect(),
         CharacterLevelMultiplierDataCollector.collect(),

@@ -1,8 +1,8 @@
-"""add weapon
+"""create weapon
 
-Revision ID: a48260077fe2
-Revises: ac9bb6ea5480
-Create Date: 2022-04-03 20:20:41.370038
+Revision ID: 2b1e91adedaa
+Revises: 19172d9611cb
+Create Date: 2022-05-04 17:01:45.946065
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a48260077fe2'
-down_revision = 'ac9bb6ea5480'
+revision = '2b1e91adedaa'
+down_revision = '19172d9611cb'
 branch_labels = None
 depends_on = None
 
@@ -100,6 +100,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('passive_ability_core', sa.Integer(), nullable=False),
     sa.Column('stat_type', sa.String(length=5), nullable=False),
+    sa.Column('is_special', sa.Boolean(), nullable=True),
+    sa.Column('is_team_buff', sa.Boolean(), nullable=True),
     sa.Column('max_value', sa.Float(), nullable=False),
     sa.Column('refinement_scale', sa.Float(), nullable=False),
     sa.Column('position', sa.SmallInteger(), nullable=True),

@@ -5,6 +5,7 @@ from src.app.planner.consts import ArtifactType
 from src.app.planner.models import artifacts as models
 from src.app.base.forms import model_form_factory
 
+ArtifactOut = get_pydantic(models.Artifact, name='Artifact')
 ArtifactMainStat = get_pydantic(models.ArtifactMainStat, name='ArtifactMainStat', exclude={'id'})
 ArtifactSubStat = get_pydantic(models.ArtifactSubStat, name='ArtifactSubStat', exclude={'id'})
 ArtifactSubStatRelated = get_pydantic(models.ArtifactSubStat, name='ArtifactSubStatRelated', exclude={'id', 'rarity'})

@@ -13,13 +13,14 @@ team_router = APIRouter(prefix='/teams', tags=['Teams'])
 @team_router.get('', response_model=list[schemas.TeamOut])
 async def get_teams(
     offset: int = Query(0),
-    limit: int = Query(15)
+    limit: int = Query(15),
+    author: int = Query(None)
 ):
-    return await TeamService.all(offset=offset, limit=limit)
+    return await TeamService.all(offset=offset, limit=limit, author=author)
 
 
 @team_router.get('/{pk}', response_model=schemas.TeamOut)
-async def get_team(
+async def get_single_team(
     pk: int = Path(..., gt=0, description='ID of team')
 ):
     return await TeamService.get_object_or_404(pk=pk)

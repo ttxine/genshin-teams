@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_DEVELOP_PREFIX = '/api/develop'
 API_PREFIX = '/api/v1'
 SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'localhost:8000')
 
