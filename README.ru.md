@@ -1,7 +1,7 @@
 # Genshin Teams
 [English](./README.md)
 
-[Техническое задание](./docs/technical_requirements.ru.md)
+[Техническое задание](./docs/technical_requirements.md)
 
 ## Описание
 Инструмент для Genshin Impact, предоставляющий редактор оружия, артефактов и персонажей и позволяющий планировать и делиться своими собственными командами.
