@@ -7,9 +7,12 @@ from ormar import Model
 from ormar.exceptions import ModelError
 
 from scripts.exceptions import CommandException
-from src.app.planner.models import artifacts, weapons, characters
-from src.app.planner.services.weapons import WeaponMainStatService, WeaponSubStatService
-from src.app.planner.schemas import weapons as weapon_schemas
+from src.app.planner.weapons import (
+    models as weapon_models,
+    services as weapon_services,
+    schemas as weapon_schemas
+)
+from src.app.planner.artifacts import models as artifact_models
 
 INGAME_PROPS = {
     'FIGHT_PROP_HP': 'hp',
@@ -85,7 +88,7 @@ class GenshinDataCollector:
 
 class WeaponMainStatCoreDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponExcelConfigData.json'
-    _model: Type[Model] = weapons.WeaponMainStatCore
+    _model: Type[Model] = weapon_models.WeaponMainStatCore
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
@@ -108,7 +111,7 @@ class WeaponMainStatCoreDataCollector(GenshinDataCollector):
 
 class WeaponSubStatCoreDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponExcelConfigData.json'
-    _model: Type[Model] = weapons.WeaponSubStatCore
+    _model: Type[Model] = weapon_models.WeaponSubStatCore
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
@@ -123,7 +126,7 @@ class WeaponSubStatCoreDataCollector(GenshinDataCollector):
 
 class WeaponAscensionValueDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponPromoteExcelConfigData.json'
-    _model: Type[Model] = weapons.WeaponMainStatAscensionValue
+    _model: Type[Model] = weapon_models.WeaponMainStatAscensionValue
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
@@ -141,9 +144,85 @@ class WeaponAscensionValueDataCollector(GenshinDataCollector):
         return super()._as_model(obj)
 
 
+class WeaponLevelMultipliersDataCollector(GenshinDataCollector):
+    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponCurveExcelConfigData.json'
+    _model: Type[Model] = weapon_models.WeaponMainStatLevelMultiplier
+
+    @classmethod
+    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
+        for raw_objs in data:
+            if raw_objs['level'] <= 90:
+                for raw_obj in raw_objs['curveInfos']:
+                    if raw_obj['type'][-10:-4] == 'ATTACK':
+                        obj = cls._as_model(raw_obj, level=raw_objs['level'])
+                        if obj is not None:
+                            await cls._model.objects.get_or_create(
+                                **obj.dict(exclude={'id'})
+                            )
+                    else:
+                        await weapon_models.WeaponSubStatLevelMultiplier.objects\
+                            .get_or_create(
+                                level=raw_objs['level'],
+                                multiplier=raw_obj['value']
+                            )
+
+    @classmethod
+    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
+        obj = {
+            'tier': int(raw_obj['type'][-3:]),
+            'rarity': int(raw_obj['type'][-3]) + 2,
+            'multiplier': float(raw_obj['value']),
+            'level': kwargs['level']
+        }
+        return super()._as_model(obj)
+
+
+async def collect_weapon_main_stat():
+    cores = await weapon_models.WeaponMainStatCore.objects.all()
+    for core in cores:
+        if core.rarity < 3:
+            level_range = 71
+            ascension_range = 5
+        else:
+            level_range = 91
+            ascension_range = 7
+        for level in range(1, level_range):
+            for ascension in range(0, ascension_range):
+                schema = weapon_schemas.WeaponMainStat(
+                    level=level,
+                    ascension=ascension,
+                    core=core.id
+                )
+                await weapon_services.WeaponMainStatService.get_or_create(
+                    schema,
+                    level=level,
+                    ascension=ascension,
+                    core=core.id
+                )
+
+    print('Weapon Main Stat data has been loaded.')
+
+
+async def collect_weapon_sub_stat():
+    cores = await weapon_models.WeaponSubStatCore.objects.all()
+    for core in cores:
+        for level in range(1, 91):
+            schema = weapon_schemas.WeaponSubStat(
+                level=level,
+                core=core.id
+            )
+            await weapon_services.WeaponSubStatService.get_or_create(
+                schema,
+                level=level,
+                core=core.id
+            )
+
+    print('Weapon Sub Stat data has been loaded.')
+
+
 class ArtifactSubStatDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/ReliquaryAffixExcelConfigData.json'
-    _model: Type[Model] = artifacts.ArtifactSubStat
+    _model: Type[Model] = artifact_models.ArtifactSubStat
 
     @classmethod
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
@@ -178,7 +257,7 @@ class ArtifactSubStatDataCollector(GenshinDataCollector):
 
 class ArtifactMainStatDataCollector(GenshinDataCollector):
     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/ReliquaryLevelExcelConfigData.json'
-    _model: Type[Model] = artifacts.ArtifactMainStat
+    _model: Type[Model] = artifact_models.ArtifactMainStat
 
     @classmethod
     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
@@ -203,74 +282,74 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
             return super()._as_model(obj)
 
 
-class CharacterLevelMultiplierDataCollector(GenshinDataCollector):
-    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/AvatarCurveExcelConfigData.json'
-    _model: Type[Model] = characters.CharacterLevelMultiplier
+# class CharacterLevelMultiplierDataCollector(GenshinDataCollector):
+#     _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/AvatarCurveExcelConfigData.json'
+#     _model: Type[Model] = characters.CharacterLevelMultiplier
 
-    @classmethod
-    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
-        for raw_obj in data:
-            if raw_obj['level'] <= 90:
-                for rarity_index in range(1, 3):
-                    obj = cls._as_model(raw_obj, index=rarity_index)
-                    if obj is not None:
-                        await cls._model.objects.get_or_create(
-                            **obj.dict(exclude={'id'})
-                        )
+#     @classmethod
+#     async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
+#         for raw_obj in data:
+#             if raw_obj['level'] <= 90:
+#                 for rarity_index in range(1, 3):
+#                     obj = cls._as_model(raw_obj, index=rarity_index)
+#                     if obj is not None:
+#                         await cls._model.objects.get_or_create(
+#                             **obj.dict(exclude={'id'})
+#                         )
 
-    @classmethod
-    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        obj = {
-            'level': raw_obj['level'],
-            'rarity': int(raw_obj['curveInfos'][kwargs['index']]['type'][-1]),
-            'multiplier': raw_obj['curveInfos'][kwargs['index']]['value']
-        }
-        return super()._as_model(obj)
+#     @classmethod
+#     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
+#         obj = {
+#             'level': raw_obj['level'],
+#             'rarity': int(raw_obj['curveInfos'][kwargs['index']]['type'][-1]),
+#             'multiplier': raw_obj['curveInfos'][kwargs['index']]['value']
+#         }
+#         return super()._as_model(obj)
 
 
-async def collect_character_ascension():
-    ascensions = [
-        {
-            "ascension": 0,
-            "sum_of_sections": 0,
-            "bonus_stat_multiplier": 0
-        },
-        {
-            "ascension": 1,
-            "sum_of_sections": 38,
-            "bonus_stat_multiplier": 0
-        },
-        {
-            "ascension": 2,
-            "sum_of_sections": 65,
-            "bonus_stat_multiplier": 1
-        },
-        {
-            "ascension": 3,
-            "sum_of_sections": 101,
-            "bonus_stat_multiplier": 2
-        },
-        {
-            "ascension": 4,
-            "sum_of_sections": 128,
-            "bonus_stat_multiplier": 2
-        },
-        {
-            "ascension": 5,
-            "sum_of_sections": 155,
-            "bonus_stat_multiplier": 3
-        },
-        {
-            "ascension": 6,
-            "sum_of_sections": 182,
-            "bonus_stat_multiplier": 4
-        }
-    ]
+# async def collect_character_ascension():
+#     ascensions = [
+#         {
+#             "ascension": 0,
+#             "sum_of_sections": 0,
+#             "bonus_stat_multiplier": 0
+#         },
+#         {
+#             "ascension": 1,
+#             "sum_of_sections": 38,
+#             "bonus_stat_multiplier": 0
+#         },
+#         {
+#             "ascension": 2,
+#             "sum_of_sections": 65,
+#             "bonus_stat_multiplier": 1
+#         },
+#         {
+#             "ascension": 3,
+#             "sum_of_sections": 101,
+#             "bonus_stat_multiplier": 2
+#         },
+#         {
+#             "ascension": 4,
+#             "sum_of_sections": 128,
+#             "bonus_stat_multiplier": 2
+#         },
+#         {
+#             "ascension": 5,
+#             "sum_of_sections": 155,
+#             "bonus_stat_multiplier": 3
+#         },
+#         {
+#             "ascension": 6,
+#             "sum_of_sections": 182,
+#             "bonus_stat_multiplier": 4
+#         }
+#     ]
 
-    for ascension in ascensions:
-        await characters.CharacterAscension.objects.get_or_create(**ascension)
+#     for ascension in ascensions:
+#         await characters.CharacterAscension.objects.get_or_create(**ascension)
 
-    print("Character ascension data collected successfully.")
+#     print("Character ascension data collected successfully.")
 
 
 # TODO:
@@ -291,82 +370,6 @@ async def collect_character_ascension():
 #     print("Character ascension data collected successfully.")
 
 
-class WeaponLevelMultipliersDataCollector(GenshinDataCollector):
-    _url: str = 'https://raw.githubusercontent.com/Dimbreath/GenshinData/master/ExcelBinOutput/WeaponCurveExcelConfigData.json'
-    _model: Type[Model] = weapons.WeaponMainStatLevelMultiplier
-
-    @classmethod
-    async def _insert_objects(cls, data: list[dict[str, Any]]) -> None:
-        for raw_objs in data:
-            if raw_objs['level'] <= 90:
-                for raw_obj in raw_objs['curveInfos']:
-                    if raw_obj['type'][-10:-4] == 'ATTACK':
-                        obj = cls._as_model(raw_obj, level=raw_objs['level'])
-                        if obj is not None:
-                            await cls._model.objects.get_or_create(
-                                **obj.dict(exclude={'id'})
-                            )
-                    else:
-                        await weapons.WeaponSubStatLevelMultiplier.objects\
-                            .get_or_create(
-                                level=raw_objs['level'],
-                                multiplier=raw_obj['value']
-                            )
-
-    @classmethod
-    def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        obj = {
-            'tier': int(raw_obj['type'][-3:]),
-            'rarity': int(raw_obj['type'][-3]) + 2,
-            'multiplier': float(raw_obj['value']),
-            'level': kwargs['level']
-        }
-        return super()._as_model(obj)
-
-
-async def collect_weapon_main_stat():
-    cores = await weapons.WeaponMainStatCore.objects.all()
-    for core in cores:
-        if core.rarity < 3:
-            level_range = 71
-            ascension_range = 5
-        else:
-            level_range = 91
-            ascension_range = 7
-        for level in range(1, level_range):
-            for ascension in range(0, ascension_range):
-                schema = weapon_schemas.WeaponMainStat(
-                    level=level,
-                    ascension=ascension,
-                    core=core.id
-                )
-                await WeaponMainStatService.get_or_create(
-                    schema,
-                    level=level,
-                    ascension=ascension,
-                    core=core.id
-                )
-
-    print('Weapon Main Stat data has been loaded.')
-
-
-async def collect_weapon_sub_stat():
-    cores = await weapons.WeaponSubStatCore.objects.all()
-    for core in cores:
-        for level in range(1, 91):
-            schema = weapon_schemas.WeaponSubStat(
-                level=level,
-                core=core.id
-            )
-            await WeaponSubStatService.get_or_create(
-                schema,
-                level=level,
-                core=core.id
-            )
-
-    print('Weapon Sub Stat data has been loaded.')
-
-
 async def loadgenshindata():
     tasks = [
         WeaponMainStatCoreDataCollector.collect(),
@@ -375,10 +378,8 @@ async def loadgenshindata():
         WeaponLevelMultipliersDataCollector.collect(),
         collect_weapon_sub_stat(),
         collect_weapon_main_stat(),
-        ArtifactSubStatDataCollector.collect(),
         ArtifactMainStatDataCollector.collect(),
-        CharacterLevelMultiplierDataCollector.collect(),
-        collect_character_ascension()
+        ArtifactSubStatDataCollector.collect()
     ]
     await asyncio.gather(*tasks)
     print('\nGenshin data has been loaded.')

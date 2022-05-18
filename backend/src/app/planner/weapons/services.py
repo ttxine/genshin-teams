@@ -2,11 +2,11 @@ from typing import Any, Type
 
 from ormar import Model
 
-from src.app.base.services import ModelService, CreateSchema, UpdateSchema
-from src.app.base.uploads import get_weapon_image_upload_path
 from src.utils.images import upload_image
-from src.app.planner.models import weapons as models
-from src.app.planner.schemas import weapons as schemas
+from src.app.base.uploads import get_weapon_image_upload_path
+from src.app.base.services import ModelService, CreateSchema, UpdateSchema
+from src.app.planner.weapons import models
+from src.app.planner.weapons import schemas
 
 
 class WeaponMainStatLevelMultiplierService(ModelService):
@@ -30,22 +30,23 @@ class WeaponMainStatService(ModelService):
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
-        core: models.WeaponMainStatCore = await WeaponMainStatCoreService().get_object_or_404(
-            pk=schema.core
-        )
+        core: models.WeaponMainStatCore = await WeaponMainStatCoreService\
+            .get_object_or_404(pk=schema.core)
         start_value = core.start_value
 
         rarity = 3 if core.rarity <= 3 else core.rarity
-        level_multiplier = await WeaponMainStatLevelMultiplierService().get_object_or_404(
-            level=schema.level,
-            tier=core.tier,
-            rarity=rarity
-        )
+        level_multiplier = await WeaponMainStatLevelMultiplierService\
+            .get_object_or_404(
+                level=schema.level,
+                tier=core.tier,
+                rarity=rarity
+            )
         if schema.ascension > 0:
-            ascension_value = (await WeaponMainStatAscensionValueService().get_object_or_404(
-                ascension=schema.ascension,
-                rarity=core.rarity
-            )).ascension_value
+            ascension_value = (await WeaponMainStatAscensionValueService\
+                .get_object_or_404(
+                    ascension=schema.ascension,
+                    rarity=core.rarity
+                )).ascension_value
         else:
             ascension_value = 0
 
@@ -69,14 +70,12 @@ class WeaponSubStatService(ModelService):
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
-        core: models.WeaponSubStatCore = await WeaponSubStatCoreService().get_object_or_404(
-            pk=schema.core
-        )
+        core: models.WeaponSubStatCore = await WeaponSubStatCoreService\
+            .get_object_or_404(pk=schema.core)
 
         start_value = core.start_value
-        level_multiplier = await WeaponSubStatLevelMultiplierService().get_object_or_404(
-            level=schema.level
-        )
+        level_multiplier = await WeaponSubStatLevelMultiplierService\
+            .get_object_or_404(level=schema.level)
 
         value = start_value * level_multiplier.multiplier
 
@@ -106,7 +105,9 @@ class WeaponPassiveAbilityCoreService(ModelService):
                     **stat_core_schema.dict(),
                     passive_ability_core=core.id
                 )
-                stat_core = await WeaponPassiveAbilityStatCoreService.create(stat_core_schema)
+                stat_core = await WeaponPassiveAbilityStatCoreService.create(
+                    stat_core_schema
+                )
                 for refinement in range(1, 6):
                     pas_schema = schemas.WeaponPassiveAbilityStat(
                         core=stat_core.id,
@@ -136,7 +137,9 @@ class WeaponPassiveAbilityStatCoreService(ModelService):
 
         ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
-            **schema.dict(exclude={'passive_ability_core', 'refinement_scale'}),
+            **schema.dict(
+                exclude={'passive_ability_core', 'refinement_scale'}
+            ),
             passive_ability_core=passive_ability_core,
             refinement_scale=refinement_scale
         )
@@ -221,7 +224,9 @@ class WeaponPassiveAbilityStatService(ModelService):
             pk=schema.core
         )
 
-        value = core.start_value + core.refinement_scale * (schema.refinement - 1)
+        value = core.start_value + core.refinement_scale * (
+            schema.refinement - 1
+        )
 
         ModelSchema = cls.model.get_pydantic(exclude={'id'})
         to_save = ModelSchema(
@@ -235,10 +240,6 @@ class WeaponPassiveAbilityStatService(ModelService):
 
 class WeaponCoreService(ModelService):
     model: Type[Model] = models.WeaponCore
-
-    @classmethod
-    async def all(cls, offset: int | None = None, limit: int | None = None, **kwargs) -> list[Model]:
-        return await super().all(offset, limit, **kwargs)
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = False):
@@ -311,7 +312,9 @@ class WeaponService(ModelService):
 
     @classmethod
     async def _pre_save(cls, schema: CreateSchema | UpdateSchema, exclude_none: bool = True):
-        core: models.WeaponCore = await WeaponCoreService().get_object_or_404(pk=schema.core)
+        core: models.WeaponCore = await WeaponCoreService().get_object_or_404(
+            pk=schema.core
+        )
 
         passive_ability = await WeaponPassiveAbilityService().get_object_or_404(
             core=core,

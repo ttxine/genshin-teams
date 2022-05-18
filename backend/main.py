@@ -1,16 +1,17 @@
-import asyncio
 import sys
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from scripts import createsuperuser, startserver, loadgenshindata
 from scripts.exceptions import CommandException
+from src.config import settings
 from src.core.db import database
 from src.app.auth.routes import auth_router
 from src.app.user.routes import user_router
 from src.app.planner.routers import planner_router
-from src.config import settings
 
 
 app = FastAPI(

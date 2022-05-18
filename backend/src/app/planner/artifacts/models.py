@@ -1,7 +1,7 @@
 import ormar
 
-from src.app.planner.consts import ArtifactType, Stat, StatType
 from src.core.db import BaseMeta
+from src.app.planner.consts import ArtifactType, Stat, StatType
 
 
 class ArtifactMainStat(ormar.Model):
@@ -44,8 +44,18 @@ class ArtifactSet(ormar.Model):
     id: int = ormar.Integer(primary_key=True)
     name: str = ormar.String(max_length=100)
     max_rarity: int = ormar.SmallInteger(minimum=1, maximum=5)
-    two_piece_bonus: ArtifactSetBonus = ormar.ForeignKey(ArtifactSetBonus, skip_reverse=True, related_name='as_two_piece', nullable=False)
-    four_piece_bonus: ArtifactSetBonus = ormar.ForeignKey(ArtifactSetBonus, skip_reverse=True, related_name='as_four_piece', nullable=False)
+    two_piece_bonus: ArtifactSetBonus = ormar.ForeignKey(
+        ArtifactSetBonus,
+        skip_reverse=True,
+        related_name='as_two_piece',
+        nullable=False
+    )
+    four_piece_bonus: ArtifactSetBonus = ormar.ForeignKey(
+        ArtifactSetBonus,
+        skip_reverse=True,
+        related_name='as_four_piece',
+        nullable=False
+    )
 
 
 class ArtifactCore(ormar.Model):
@@ -54,7 +64,11 @@ class ArtifactCore(ormar.Model):
 
     id: int = ormar.Integer(primary_key=True)
     name: str = ormar.String(max_length=100)
-    artifact_set: ArtifactSet = ormar.ForeignKey(ArtifactSet, skip_reverse=True, nullable=False)
+    artifact_set: ArtifactSet = ormar.ForeignKey(
+        ArtifactSet,
+        skip_reverse=True,
+        nullable=False
+    )
     artifact_type: str = ormar.String(max_length=7, choices=list(ArtifactType))
     image: str = ormar.String(max_length=255)
 
@@ -67,8 +81,32 @@ class Artifact(ormar.Model):
     core: ArtifactCore = ormar.ForeignKey(ArtifactCore, skip_reverse=True, nullable=False)
     rarity: int = ormar.SmallInteger(minimum=1, maximum=5)
     level: int = ormar.SmallInteger(minimum=0, maximum=20)
-    main_stat: ArtifactMainStat = ormar.ForeignKey(ArtifactMainStat, skip_reverse=True, nullable=False)
-    first_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(ArtifactSubStat, skip_reverse=True, related_name='as_first', nullable=True)
-    second_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(ArtifactSubStat, skip_reverse=True, related_name='as_second', nullable=True)
-    third_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(ArtifactSubStat, skip_reverse=True, related_name='as_third', nullable=True)
-    fourth_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(ArtifactSubStat, skip_reverse=True, related_name='as_fourth', nullable=True)
+    main_stat: ArtifactMainStat = ormar.ForeignKey(
+        ArtifactMainStat,
+        skip_reverse=True,
+        nullable=False
+    )
+    first_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(
+        ArtifactSubStat,
+        skip_reverse=True,
+        related_name='as_first',
+        nullable=True
+    )
+    second_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(
+        ArtifactSubStat,
+        skip_reverse=True,
+        related_name='as_second',
+        nullable=True
+    )
+    third_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(
+        ArtifactSubStat,
+        skip_reverse=True,
+        related_name='as_third',
+        nullable=True
+    )
+    fourth_sub_stat: ArtifactSubStat | None = ormar.ForeignKey(
+        ArtifactSubStat,
+        skip_reverse=True,
+        related_name='as_fourth',
+        nullable=True
+    )

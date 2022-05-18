@@ -1,28 +1,27 @@
 from pydantic import root_validator
 from fastapi import File, Body, UploadFile
 
-from src.app.planner.models import weapons
 from src.app.base.forms import model_form_factory
+from src.app.planner.weapons import models
 
-WeaponPassiveAbilityStatFromModel = weapons.WeaponPassiveAbilityStat\
+WeaponPassiveAbilityStatFromModel = models.WeaponPassiveAbilityStat\
     .get_pydantic(exclude={'id', 'core', 'value'})
-
-WeaponFromModel = weapons.Weapon.get_pydantic(exclude={
+WeaponFromModel = models.Weapon.get_pydantic(exclude={
     'id',
     'core',
     'main_stat',
     'sub_stat',
     'passive_ability'
 })
+WeaponPassiveAbilityStatCoreCU = models.WeaponPassiveAbilityStatCore\
+    .get_pydantic(
+        exclude={'id', 'core', 'refinement_scale', 'passive_ability_core'}
+    )
 
-WeaponPassiveAbilityStatCoreCU = weapons.WeaponPassiveAbilityStatCore\
-    .get_pydantic(exclude={'id', 'core', 'refinement_scale', 'passive_ability_core'})
-
-WeaponPassiveAbilityFromModel = weapons.WeaponPassiveAbility.get_pydantic(
+WeaponPassiveAbilityFromModel = models.WeaponPassiveAbility.get_pydantic(
     exclude={'id', 'core', 'description'}
 )
-
-WeaponCoreFromModel = weapons.WeaponCore.get_pydantic(exclude={
+WeaponCoreFromModel = models.WeaponCore.get_pydantic(exclude={
     'id',
     'main_stat_core',
     'sub_stat_core',
@@ -30,14 +29,12 @@ WeaponCoreFromModel = weapons.WeaponCore.get_pydantic(exclude={
     'first_ascension_image',
     'second_ascension_image'
 })
-
-WeaponSubStatFromModel = weapons.WeaponSubStat.get_pydantic(exclude={
+WeaponSubStatFromModel = models.WeaponSubStat.get_pydantic(exclude={
     'id',
     'core',
     'value'
 })
-
-WeaponMainStatFromModel = weapons.WeaponMainStat.get_pydantic(exclude={
+WeaponMainStatFromModel = models.WeaponMainStat.get_pydantic(exclude={
     'id',
     'core',
     'value'
@@ -104,11 +101,11 @@ class WeaponCoreCU(WeaponCoreFromModel):
     second_ascension_image: UploadFile | None = File(None)
 
 
-class WeaponPassiveAbilityR(weapons.WeaponPassiveAbility.get_pydantic()):
-    stats: list[weapons.WeaponPassiveAbilityStat.get_pydantic()]
+class WeaponPassiveAbilityR(models.WeaponPassiveAbility.get_pydantic()):
+    stats: list[models.WeaponPassiveAbilityStat.get_pydantic()]
 
 
-class WeaponR(weapons.Weapon.get_pydantic(exclude={'passive_ability'})):
+class WeaponR(models.Weapon.get_pydantic(exclude={'passive_ability'})):
     passive_ability: WeaponPassiveAbilityR
 
 
@@ -127,12 +124,13 @@ class Weapon(WeaponFromModel):
             raise value_error
         elif ascension == 1 and (level > 40 or level < 20):
             raise value_error
-        elif ascension > 1 and (level > ascension * 10 + 30 or level < ascension * 10 + 20):
+        elif (ascension > 1 and
+            (level > ascension * 10 + 30 or level < ascension * 10 + 20)):
             raise value_error
         return values
 
 
-class WeaponPassiveAbilityCore(weapons.WeaponPassiveAbilityCore.get_pydantic(
+class WeaponPassiveAbilityCore(models.WeaponPassiveAbilityCore.get_pydantic(
     exclude={'id'}
 )):
     stat_cores: list[WeaponPassiveAbilityStatCoreCU]

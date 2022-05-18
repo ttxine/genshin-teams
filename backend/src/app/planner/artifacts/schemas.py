@@ -1,9 +1,9 @@
 from fastapi import Body, File, UploadFile
-from src.app.base.services import get_pydantic
-from src.app.planner.consts import ArtifactType
 
-from src.app.planner.models import artifacts as models
+from src.app.base.services import get_pydantic
 from src.app.base.forms import model_form_factory
+from src.app.planner.consts import ArtifactType
+from src.app.planner.artifacts import models
 
 ArtifactOut = get_pydantic(models.Artifact, name='Artifact')
 ArtifactMainStat = get_pydantic(models.ArtifactMainStat, name='ArtifactMainStat', exclude={'id'})

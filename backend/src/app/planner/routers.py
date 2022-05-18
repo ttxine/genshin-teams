@@ -1,10 +1,8 @@
 from fastapi import APIRouter
 
-from src.app.planner.routes.weapons import weapon_router
-from src.app.planner.routes.artifacts import artifact_router
-from src.app.planner.routes.characters import character_router
-from src.app.planner.routes.teams import team_router
 from src.app.base.schemas import ExceptionMessage
+from src.app.planner.weapons.routes import weapon_router
+from src.app.planner.artifacts.routes import artifact_router
 
 planner_router = APIRouter(responses={
     201: {'description': 'An item'},
@@ -19,7 +17,6 @@ planner_router = APIRouter(responses={
     },
     404: {'model': ExceptionMessage}
 })
+
 planner_router.include_router(weapon_router)
 planner_router.include_router(artifact_router)
-planner_router.include_router(character_router)
-planner_router.include_router(team_router)
