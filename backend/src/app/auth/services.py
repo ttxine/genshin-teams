@@ -1,20 +1,21 @@
 from datetime import datetime
 
 import ormar
-from fastapi import BackgroundTasks, HTTPException, Request, Response
+from fastapi import BackgroundTasks, HTTPException
 
+from src.config import settings
+from src.core.security import get_password_hash, verify_password
+from src.utils.send_mail import send_email_confirmation, send_password_reset
 from src.app.auth.tokens import (
     AccessToken,
     EmailConfirmationToken,
     PasswordResetToken,
     RefreshToken
 )
+from src.app.auth.jwt import generate_refresh_token
+from src.app.auth.schemas import PasswordChange, UserCreate, UserLogin
 from src.app.user.models import User
 from src.app.user.services import UserService
-from src.app.auth.jwt import generate_refresh_token
-from src.core.security import get_password_hash, verify_password
-from src.app.auth.schemas import PasswordChange, UserCreate, UserLogin
-from src.utils.send_mail import send_email_confirmation, send_password_reset
 
 
 async def register_user(user: UserCreate, task: BackgroundTasks) -> None:
@@ -66,21 +67,6 @@ async def authenticate_user(schema: UserLogin) -> User:
     return user
 
 
-async def logout_user(
-    token: str,
-    request: Request, response: Response
-) -> None:
-    access_token = AccessToken(token)
-    await access_token.verify()
-
-    refresh_token_cookie = request.cookies.get('rt')
-    if refresh_token_cookie:
-        refresh_token = RefreshToken(refresh_token_cookie)
-        await refresh_token.verify()
-
-        response.delete_cookie(key='rt', secure=True, httponly=True)
-
-
 async def logout_user_from_all_devices(token: str) -> None:
     access_token = AccessToken(token)
     user = await access_token.verify()
@@ -105,21 +91,19 @@ async def change_user_password(token: str, schema: PasswordChange) -> None:
     )
 
 
-async def refresh_access_token(token: str, response: Response) -> dict:
+async def refresh_access_token(token: str) -> dict:
     refresh_token = RefreshToken(token)
     user: User = await refresh_token.verify()
-    access_token = refresh_token.refresh_access_token()
 
+    new_access_token = refresh_token.refresh_access_token()
     new_refresh_token = generate_refresh_token(user.id)
 
-    response.set_cookie(
-        key='rt',
-        value=new_refresh_token,
-        httponly=True,
-        secure=True
-    )
-
-    return {'access_token': access_token}
+    return {
+        'access_token': new_access_token,
+        'expires_in': settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        'refresh_token': new_refresh_token,
+        'refresh_token_expires_in': settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60
+    }
 
 
 async def recover_user_password(email: str, task: BackgroundTasks) -> None:
@@ -132,23 +116,9 @@ async def recover_user_password(email: str, task: BackgroundTasks) -> None:
 
 async def reset_user_password(token: str, new_raw_password: str) -> None:
     user: User = await PasswordResetToken(token).verify()
-
-    user: User = await UserService.get_object_or_404(pk=user.id)
     new_hashed_password = get_password_hash(new_raw_password)
 
     await user.update(
         hashed_password=new_hashed_password,
         invalidate_before=datetime.utcnow()
     )
-
-
-def get_refresh_token_from_cookie(request: Request) -> str:
-    try:
-        refresh_token = request.cookies['rt']
-    except KeyError:
-        raise HTTPException(
-            status_code=401,
-            detail='Invalid token',
-            headers={'WWW-Authenticate': 'Bearer'}
-        )
-    return refresh_token

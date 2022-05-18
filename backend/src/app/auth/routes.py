@@ -1,92 +1,167 @@
-from pydantic import EmailStr
-from fastapi import APIRouter, BackgroundTasks, Request, Response, Security
+from fastapi import APIRouter, BackgroundTasks, Response, Security
 from fastapi.security import HTTPAuthorizationCredentials
 
+from src.config import settings
+from src.app.base.schemas import Message, ExceptionMessage
+from src.app.auth.permissions import security, token_responses
 from src.app.auth.jwt import generate_access_token, generate_refresh_token
-from src.app.auth.schemas import AccessToken, PasswordChange, PasswordReset, UserCreate, UserLogin
-from src.app.auth.services import authenticate_user, change_user_password, confirm_user_email, get_refresh_token_from_cookie, logout_user, logout_user_from_all_devices, recover_user_password, refresh_access_token, register_user, reset_user_password
-from src.app.base.schemas import Message
-from src.app.auth.permissions import security
+from src.app.auth import schemas, services
 
 auth_router = APIRouter(prefix='/auth', tags=['Authentication'])
 
 
-@auth_router.post('/register', response_model=Message)
-async def register(user: UserCreate, task: BackgroundTasks):
-    await register_user(user, task)
+@auth_router.post('/user', response_model=Message, responses={
+    404: {'model': ExceptionMessage}
+})
+async def register(user: schemas.UserCreate, task: BackgroundTasks):
+    await services.register_user(user, task)
     return Message(msg='Email confirmation has been sent')
 
 
-@auth_router.post('/token', response_model=AccessToken)
-async def login(schema: UserLogin, response: Response):
-    user = await authenticate_user(schema)
+@auth_router.post(
+    '/token',
+    response_model=schemas.AuthTokens,
+    responses=token_responses
+)
+async def login(schema: schemas.UserLogin):
+    user = await services.authenticate_user(schema)
 
     access_token = generate_access_token(user.id)
     refresh_token = generate_refresh_token(user.id)
 
-    response.set_cookie('rt', refresh_token, secure=True, httponly=True)
-
-    return {'access_token': access_token}
-
-
-@auth_router.get('/refresh', response_model=AccessToken)
-async def refresh(request: Request, response: Response):
-    refresh_token = get_refresh_token_from_cookie(request)
-
-    return await refresh_access_token(refresh_token, response)
+    return {
+        'access_token': access_token,
+        'expires_in': settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        'refresh_token': refresh_token,
+        'refresh_token_expires_in': settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60
+    }
 
 
-@auth_router.post('/logout', response_model=Message)
-async def logout(
-    response: Response,
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Security(security)
-):
-    """
-    Убирает из cookie refresh token, access token из памяти
-    приложения нужно убрать самостоятельно.
-    """
-    token = credentials.credentials
-    await logout_user(token, request, response)
-    return Message(msg='Successful logout')
+@auth_router.put('/token', response_model=schemas.AuthTokens, responses= {
+    403: {
+        'model': ExceptionMessage,
+        'description': 'Bad request or user doesn\'t have enough '
+            'privileges'
+    }
+})
+async def refresh(schema: schemas.RefreshToken):
+    return await services.refresh_access_token(schema.token)
 
 
-@auth_router.post('/logout-from-all-devices', response_model=Message)
+@auth_router.post(
+    '/devices/logout',
+    status_code=204,
+    responses={
+        204: {
+            'description': 'Successful logout from all devices'
+        },
+        **token_responses
+    }
+)
 async def logout_from_all_devices(
     credentials: HTTPAuthorizationCredentials = Security(security)
 ):
     token = credentials.credentials
-    await logout_user_from_all_devices(token)
-    return Message(msg='Successful logout from all devices')
+    await services.logout_user_from_all_devices(token)
 
 
-@auth_router.post('/change-password', response_model=Message)
+@auth_router.put(
+    '/email',
+    status_code=204,
+    responses= {
+        204: {
+            'description': 'Email confirmed successfully'
+        },
+        403: {
+            'model': ExceptionMessage,
+            'description': 'Bad request or user doesn\'t have enough '
+                'privileges'
+        }
+    },
+    response_class=Response
+)
+async def confirm_email(schema: schemas.EmailConfirmationToken):
+    await services.confirm_user_email(schema.token)
+
+
+# TODO
+# Do a resend email
+# 
+# @auth_router.post(
+#     '/email',
+#     status_code=204,
+#     responses= {
+#         204: {
+#             'description': 'Email confirmation has been sent'
+#         },
+#         403: {
+#             'model': ExceptionMessage,
+#             'description': 'Bad request or user doesn\'t have enough '
+#                 'privileges'
+#         }
+#     },
+#     response_class=Response
+# )
+# async def resend_email_confirmation():
+#     pass
+
+
+@auth_router.post(
+    '/password',
+    status_code=204,
+    responses= {
+        204: {
+            'description': 'Password changed successfully'
+        },
+        403: {
+            'model': ExceptionMessage,
+            'description': 'Bad request or user doesn\'t have enough '
+                'privileges'
+        }
+    }
+)
+async def reset_password(schema: schemas.PasswordReset):
+    await services.reset_user_password(
+        schema.token,
+        schema.new_password
+    )
+
+
+@auth_router.put(
+    '/password',
+    status_code=204,
+    responses={
+        204: {
+            'description': 'Password changed successfully'
+        },
+        **token_responses
+    }
+)
 async def change_password(
-    passwords: PasswordChange,
+    passwords: schemas.PasswordChange,
     credentials: HTTPAuthorizationCredentials = Security(security)
 ):
     token = credentials.credentials
-    await change_user_password(
+    await services.change_user_password(
         token,
         passwords.old_password,
         passwords.new_password
     )
-    return Message(msg='Password changed successfully')
 
 
-@auth_router.post('/confirm-email/{token}', response_model=Message)
-async def confirm_email(token: str):
-    await confirm_user_email(token)
-    return Message(msg='Email confirmed successfully')
-
-
-@auth_router.post('/recover-password/{email}', response_model=Message)
-async def recover_password(email: EmailStr, task: BackgroundTasks):
-    await recover_user_password(email, task)
+@auth_router.post(
+    '/password/recovery',
+    status_code=204,
+    responses={
+        204: {
+            'description': 'Password reset mail has been sent'
+        },
+        404: {'model': ExceptionMessage}
+    }
+)
+async def recover_password(
+    schema: schemas.PasswordRecovery,
+    task: BackgroundTasks
+):
+    await services.recover_user_password(schema.email, task)
     return Message(msg='Password reset mail has been sent')
-
-
-@auth_router.post('/reset-password/{token}', response_model=Message)
-async def reset_password(token: str, schema: PasswordReset):
-    await reset_user_password(token, schema.new_password)
-    return Message(msg='Password changed successfully')

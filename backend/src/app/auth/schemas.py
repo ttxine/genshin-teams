@@ -1,4 +1,4 @@
-from fastapi import Body, UploadFile
+from fastapi import Body
 from pydantic import BaseModel, EmailStr
 
 
@@ -15,13 +15,36 @@ class UserCreate(UserLogin):
     email: EmailStr
 
 
-class AccessToken(BaseModel):
+class AuthTokens(BaseModel):
     access_token: str
+    expires_in: int
+    refresh_token: str
+    refresh_token_expires_in: int
 
 
-class PasswordReset(BaseModel):
-    raw_new_password: str
+class Token(BaseModel):
+    token: str
+
+
+class RefreshToken(Token):
+    token: str
+
+
+class EmailConfirmationToken(Token):
+    token: str
+
+
+class PasswordResetToken(Token):
+    token: str
+
+
+class PasswordRecovery(BaseModel):
+    email: EmailStr
+
+
+class PasswordReset(PasswordResetToken):
+    new_password: str
 
 
 class PasswordChange(PasswordReset):
-    raw_old_password: str
+    old_password: str

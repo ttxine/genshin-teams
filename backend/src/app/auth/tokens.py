@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 from jose import jwt, JWTError
 from fastapi import HTTPException
 
-from src.app.user.models import User
-from src.app.auth.jwt import generate_access_token
-from src.app.user.services import UserService
 from src.config import settings
+from src.app.user.models import User
+from src.app.user.services import UserService
+from src.app.auth.jwt import generate_access_token
 
 
 class Token:
@@ -53,9 +53,6 @@ class Token:
     def _get_exp(self) -> str:
         return self._get('exp')
 
-    # def _get_jti(self) -> str:
-    #     return self._get('jti')
-
     def _get_sub(self) -> str:
         return self._get('sub')
 
@@ -68,7 +65,7 @@ class Token:
     def _is_iat_valid(self, invalidate_before: datetime) -> bool:
         iat_datetime = datetime.fromtimestamp(self._get_iat(), timezone.utc)\
             .replace(tzinfo=None)
-        return invalidate_before < iat_datetime
+        return invalidate_before <= iat_datetime
 
 
 class AccessToken(Token):

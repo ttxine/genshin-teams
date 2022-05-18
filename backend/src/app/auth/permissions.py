@@ -3,6 +3,7 @@ from fastapi import HTTPException, Security, status
 
 from src.app.auth.http import HTTPBearerAuthorization, HTTPAuthorizationCredentials
 from src.app.auth.tokens import AccessToken
+from src.app.base.schemas import ExceptionMessage
 from src.app.user.services import UserService
 from src.app.user.models import User
 
@@ -21,9 +22,8 @@ async def get_current_user(
         user_id = access_token.user_id
     except JWTError:
         raise HTTPException(
-            status_code=401,
-            detail='Invalid token',
-            headers={'WWW-Authenticate': 'Bearer'}
+            status_code=403,
+            detail='Invalid token'
         )
 
     user = await UserService.get_object_or_404(pk=user_id)
@@ -46,3 +46,13 @@ def get_current_superuser(user: User = Security(get_current_user)):
             detail='Forbidden for current user'
         )
     return user
+
+
+token_responses = {
+    401: {'model': ExceptionMessage, 'description': 'Bad or expired token'},
+    403: {
+        'model': ExceptionMessage,
+        'description': 'Bad request or user doesn\'t have enough '
+            'privileges'
+    }
+}

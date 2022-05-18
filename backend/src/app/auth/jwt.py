@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from uuid import uuid4
 
 from jose import jwt
 
@@ -21,7 +20,6 @@ def _generate_typed_token(
     to_encode['sub'] = subject
     to_encode['token_type'] = token_type
     to_encode['exp'] = expires_at
-    # to_encode['jti'] = str(uuid4())
     to_encode['iat'] = datetime.utcnow()
     return jwt.encode(to_encode, secret, algorithm)
 
