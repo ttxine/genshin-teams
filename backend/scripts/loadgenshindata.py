@@ -6,6 +6,7 @@ import httpx
 from ormar import Model
 from ormar.exceptions import ModelError
 
+from scripts.base import Argument, CommandManager
 from scripts.exceptions import CommandException
 from src.app.planner.weapons import (
     models as weapon_models,
@@ -39,6 +40,27 @@ INGAME_PROPS_EXCLUDE = {
     'FIGHT_PROP_ICE_ADD_HURT',
     'FIGHT_PROP_FIRE_SUB_HURT'
 }
+
+loadgenshindata_manager = CommandManager()
+
+
+@loadgenshindata_manager.add_command(
+    'loadgenshindata',
+    description='Loads genshin core data'
+)
+async def loadgenshindata():
+    tasks = [
+        WeaponMainStatCoreDataCollector.collect(),
+        WeaponSubStatCoreDataCollector.collect(),
+        WeaponAscensionValueDataCollector.collect(),
+        WeaponLevelMultipliersDataCollector.collect(),
+        collect_weapon_sub_stat(),
+        collect_weapon_main_stat(),
+        ArtifactMainStatDataCollector.collect(),
+        ArtifactSubStatDataCollector.collect()
+    ]
+    await asyncio.gather(*tasks)
+    print('\nGenshin data has been loaded.')
 
 
 class GenshinDataCollector:
@@ -368,18 +390,3 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
 #         await characters.CharacterAscension.objects.get_or_create(**resonance)
 
 #     print("Character ascension data collected successfully.")
-
-
-async def loadgenshindata():
-    tasks = [
-        WeaponMainStatCoreDataCollector.collect(),
-        WeaponSubStatCoreDataCollector.collect(),
-        WeaponAscensionValueDataCollector.collect(),
-        WeaponLevelMultipliersDataCollector.collect(),
-        collect_weapon_sub_stat(),
-        collect_weapon_main_stat(),
-        ArtifactMainStatDataCollector.collect(),
-        ArtifactSubStatDataCollector.collect()
-    ]
-    await asyncio.gather(*tasks)
-    print('\nGenshin data has been loaded.')

@@ -5,8 +5,10 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from scripts import createsuperuser, startserver, loadgenshindata
-from scripts.exceptions import CommandException
+from scripts.base import CommandManager
+from scripts.runserver import runserver_manager
+from scripts.createsuperuser import createsuperuser_manager
+from scripts.loadgenshindata import loadgenshindata_manager
 from src.config import settings
 from src.core.db import database
 from src.app.auth.routes import auth_router
@@ -66,19 +68,15 @@ app.include_router(planner_router, prefix='{}'.format(settings.API_PREFIX))
 
 
 if __name__ == '__main__':
-    args = []
-    try:
-        command = sys.argv
-        script = command[1]
-        if len(command) > 2:
-            args.append(sys.argv[2])
-        function = globals()[script]
-    except IndexError:
-        raise CommandException('No command given')
-    except KeyboardInterrupt:
-        print('\n\nCommand execution interrupted')
-        sys.exit(0)
-    if asyncio.iscoroutinefunction(function):
-        asyncio.run(function(*args))
+    command_manager = CommandManager()
+    command_manager.include_manager(runserver_manager)
+    command_manager.include_manager(createsuperuser_manager)
+    command_manager.include_manager(loadgenshindata_manager)
+
+    kwargs = vars(command_manager.parse_args())
+    command, func = kwargs.pop('command'), kwargs.pop('func')
+
+    if asyncio.iscoroutinefunction(func):
+        asyncio.run(func(**kwargs))
     else:
-        function(*args)
+        func(**kwargs)
