@@ -60,7 +60,7 @@ async def shutdown() -> None:
         await database_.disconnect()
 
 
-app.include_router(auth_router, prefix='{}/auth'.format(settings.API_PREFIX))
+app.include_router(auth_router, prefix='{}'.format(settings.API_PREFIX))
 app.include_router(user_router, prefix='{}'.format(settings.API_PREFIX))
 app.include_router(planner_router, prefix='{}'.format(settings.API_PREFIX))
 
