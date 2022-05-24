@@ -25,8 +25,5 @@ async def createsuperuser() -> None:
     if exists:
         print('User with the entered data already exists')
     else:
-        await UserService.create(
-            **schema.dict(exclude={'password'}),
-            hashed_password=get_password_hash(schema.password)
-        )
+        await UserService.create(schema)
         print('Superuser has been successfully created')

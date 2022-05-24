@@ -54,12 +54,17 @@ async def loadgenshindata():
         WeaponSubStatCoreDataCollector.collect(),
         WeaponAscensionValueDataCollector.collect(),
         WeaponLevelMultipliersDataCollector.collect(),
-        collect_weapon_sub_stat(),
-        collect_weapon_main_stat(),
         ArtifactMainStatDataCollector.collect(),
         ArtifactSubStatDataCollector.collect()
     ]
-    await asyncio.gather(*tasks)
+    ready = await asyncio.gather(*tasks)
+
+    if ready:
+        post_tasks = [
+            collect_weapon_sub_stat(),
+            collect_weapon_main_stat()
+        ]
+        await asyncio.gather(*post_tasks)
     print('\nGenshin data has been loaded.')
 
 
@@ -182,8 +187,8 @@ class WeaponLevelMultipliersDataCollector(GenshinDataCollector):
                                 **obj.dict(exclude={'id'})
                             )
                     else:
-                        await weapon_models.WeaponSubStatLevelMultiplier.objects\
-                            .get_or_create(
+                        await weapon_models.WeaponSubStatLevelMultiplier\
+                            .objects.get_or_create(
                                 level=raw_objs['level'],
                                 multiplier=raw_obj['value']
                             )
@@ -222,7 +227,7 @@ async def collect_weapon_main_stat():
                     core=core.id
                 )
 
-    print('Weapon Main Stat data has been loaded.')
+    print('Weapon main stat data has been loaded.')
 
 
 async def collect_weapon_sub_stat():
@@ -239,7 +244,7 @@ async def collect_weapon_sub_stat():
                 core=core.id
             )
 
-    print('Weapon Sub Stat data has been loaded.')
+    print('Weapon sub stat data has been loaded.')
 
 
 class ArtifactSubStatDataCollector(GenshinDataCollector):
@@ -286,7 +291,11 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
         for raw_obj in data:
             if raw_obj.get('rank'):
                 for prop in raw_obj['addProps']:
-                    obj = cls._as_model(prop, rarity=raw_obj['rank'], level=raw_obj['level'])
+                    obj = cls._as_model(
+                        prop,
+                        rarity=raw_obj['rank'],
+                        level=raw_obj['level']
+                    )
                     if obj is not None:
                         await cls._model.objects.get_or_create(
                             **obj.dict(exclude={'id'})
@@ -294,7 +303,7 @@ class ArtifactMainStatDataCollector(GenshinDataCollector):
 
     @classmethod
     def _as_model(cls, raw_obj: dict[str, Any], **kwargs) -> Type[Model]:
-        if raw_obj['PropType'] not in INGAME_PROPS_EXCLUDE:
+        if raw_obj['propType'] not in INGAME_PROPS_EXCLUDE:
             obj = {
                 'rarity': kwargs['rarity'],
                 'level': kwargs['level'] - 1,
