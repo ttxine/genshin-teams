@@ -29,7 +29,7 @@ class WeaponType(EnumLabelsMixin, StrEnum):
 
 
 class Rarity(EnumLabelsMixin, Enum):
-    
+
     _init_ = 'value string'
 
     ONE = 1, '★'
@@ -40,7 +40,7 @@ class Rarity(EnumLabelsMixin, Enum):
 
 
 class Ascension(EnumLabelsMixin, Enum):
-    
+
     _init_ = 'value string'
 
     NULL = 0, 'Non-Ascended'
@@ -53,7 +53,7 @@ class Ascension(EnumLabelsMixin, Enum):
 
 
 class Refinement(EnumLabelsMixin, Enum):
-    
+
     _init_ = 'value string'
 
     FIRST = 1, '1st Refinement'
@@ -64,7 +64,7 @@ class Refinement(EnumLabelsMixin, Enum):
 
 
 class Stat(EnumLabelsMixin, StrEnum):
-    
+
     _init_ = 'value string'
 
     HP = 'hp', 'HP'
@@ -78,7 +78,7 @@ class Stat(EnumLabelsMixin, StrEnum):
     HEAL_BONUS = 'heal%', 'Healing Bonus%'
     CRIT_RATE = 'cr%', 'Crit Rate%'
     CRIT_DMG = 'cd%', 'Crit DMG%'
-    # Secondary Stats
+
     ELEMENTAL_DMG_BONUS = 'elem%', 'Elemental DMG Bonus%'
     PHYS_DMG_BONUS = 'phys%', 'Physical DMG Bonus%'
     ANEMO_DMG_BONUS = 'anemo%', 'Anemo DMG Bonus%'
@@ -87,7 +87,6 @@ class Stat(EnumLabelsMixin, StrEnum):
     HYDRO_DMG_BONUS = 'hydro%', 'Hydro DMG Bonus%'
     PYRO_DMG_BONUS = 'pyro%', 'Pyro DMG Bonus%'
     CRYO_DMG_BONUS = 'cryo%', 'Hydro DMG Bonus%'
-    COMMON_DMG_BONUS = 'common%', 'Common DMG Bonus'
     PHYS_DMG_RES = 'physr%', 'Physical DMG RES%'
     ANEMO_DMG_RES = 'anemor%', 'Anemo DMG RES%'
     GEO_DMG_RES = 'geor%', 'Geo DMG RES%'
@@ -100,6 +99,36 @@ class Stat(EnumLabelsMixin, StrEnum):
     INCOMING_HEAL_BONUS = 'iheal%', 'Incoming Healing Bonus'
     SHIELD_STRENGTH = 'shield%', 'Shield Strength'
     HEAL = 'heal%', 'Heal'
+
+    COMMON_DMG_BONUS = 'common%', 'Common DMG Bonus'
+    ENEMY_PHYSICAL_DMG_RES = 'ephysr%'
+    ENEMY_ANEMO_DMG_RES = 'enemor%', 'Anemo DMG RES%'
+    ENEMY_GEO_DMG_RES = 'egeor%', 'Geo DMG RES%'
+    ENEMY_ELECTRO_DMG_RES = 'eelectror%', 'Electro DMG RES%'
+    ENEMY_HYDRO_DMG_RES = 'ehydror%', 'Hydro DMG RES%'
+    ENEMY_PYRO_DMG_RES = 'epyror%', 'Pyro DMG RES%'
+    ENEMY_CRYO_DMG_RES = 'ecryor%', 'Hydro DMG RES%'
+    NORMAL_ATK_DMG_BONUS = 'norm%'
+    NORMAL_ATK_CRIT_RATE_BONUS = 'normcr%'
+    CHARGED_ATK_DMG_BONUS = 'char%'
+    CHARGED_ATK_CRIT_RATE_BONUS = 'charcr%'
+    PLUNGING_ATK_DMG_BONUS = 'plan%'
+    PLUNGING_ATK_CRIT_RATE_BONUS = 'plancr%'
+    ELEMENTAL_SKILL_DMG_BONUS = 'elemsk%'
+    ELEMENTAL_SKILL_CRIT_RATE_BONUS = 'elemskcr%'
+    ELEMENTAL_BURST_DMG_BONUS = 'elembu%'
+    ELEMENTAL_BURST_CRIT_RATE_BONUS = 'elembucr%'
+    OVERLOADED_DMG_BONUS = 'over%'
+    SHATTERED_DMG_BONUS = 'shat%'
+    ELECTRO_CHARGED_DMG_BONUS = 'elchover%'
+    SUPERCONDUCT_DMG_BONUS = 'sucond%'
+    SWIRL_DMG_BONUS = 'swirl%'
+    VAPORIZE_DMG_BONUS = 'vapo%'
+    MELT_DMG_BONUS = 'melt%'
+    MOVEMENT_SPEED = 'ms%'
+    ATTACK_SPEED = 'ms%'
+    WEAKSPOT_DMG = 'weak%'
+    DMG_REDUCTION = 'dmgr%'
 
 
 class DamageType(EnumLabelsMixin, StrEnum):
