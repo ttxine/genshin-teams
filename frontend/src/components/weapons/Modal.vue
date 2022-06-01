@@ -49,8 +49,16 @@
 	background-color: #F9F6F2;
 	border-radius: 5px;
 	max-width: 800px;
+	min-width: 280px;
+	max-height: 100vh;
 	margin: 0 auto;
 	padding: 60px 30px;
+}
+
+@media (max-width: 429.98px) {
+  .ingame-item__container {
+	  overflow-y: scroll;
+  }
 }
 </style>
 

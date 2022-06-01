@@ -50,7 +50,7 @@
                     </div>
                 </div>
             </router-link>
-            <a href="#">
+            <a>
                 <div class="menu__item">
                     <div class="menu__title _title">Characters</div>
                     <div class="menu__icon">
@@ -64,7 +64,7 @@
                     </div>
                 </div>
             </a>
-            <a href="#">
+            <a>
                 <div class="menu__item">
                     <div class="menu__title _title">Artifacts</div>
                     <div class="menu__icon">
@@ -78,7 +78,7 @@
                     </div>
                 </div>
             </a>
-            <a href="#">
+            <a>
                 <div class="menu__item">
                     <div class="menu__title _title">Teams</div>
                     <div class="menu__icon">
@@ -111,7 +111,7 @@
     </div>
 </template>
 
-<style scoped>
+<style>
 .scroll {
 	position: relative;
 }
@@ -128,6 +128,7 @@
 .main-block__steps {
 	padding: 50px 0;
 	display: flex;
+    flex-wrap: wrap;
 	justify-content: space-evenly;
 	font-size: 14px;
 }
@@ -161,9 +162,10 @@
 	flex-wrap: wrap;
 	justify-content: space-evenly;
 	margin: 50px auto;
+    padding: 0 25px;
 }
 .main-block__menu a {
-	padding: 50px;
+    margin: 25px auto;
 }
 .main-block__menu a:hover .menu__icon {
 	width: 68px;
@@ -180,7 +182,7 @@
 }
 .menu__item {
 	position: relative;
-	width: 400px;
+	max-width: 400px;
 	padding-left: 15px;
 }
 .menu__title {
@@ -201,7 +203,7 @@
 	transition: all .25s;
 }
 .menu__card {
-	padding: 0 15px;
+	width: 415px;
 }
 .menu__image {
 	position: absolute;
@@ -209,7 +211,6 @@
 	padding-top: 15px;
 	padding-left: 15px;
 	top: -15px;
-	width: 100%;
 	overflow: hidden;
 	z-index: 1;
 }
@@ -221,7 +222,6 @@
 .menu__bg--characters,
 .menu__bg--artifacts,
 .menu__bg--teams {
-	position: relative;
 	width: 300px;
 	height: 250px;
 	transform: skew(-25deg);
@@ -263,7 +263,8 @@
 	max-height: 128px;
 }
 .patreon__text {
-	width: 512px;
+	max-width: 512px;
+    text-align: justify;
 }
 .patreon__btn {
 	color: white;
@@ -277,6 +278,166 @@
 }
 .patreon__btn:hover {
 	background-color: #141518;
+}
+.main-block__info {
+    margin: 0 auto;
+}
+
+@media (max-width: 766.98px) {
+    .main-block__description {
+        font-size: 7px;
+        max-width: 255px;
+    }
+    .patreon__text,
+    .patreon__logo,
+    .patreon__btn {
+        margin: 20px auto;
+    }
+    .patreon__btn {
+        margin: 30px auto;
+    }
+    .menu__title {
+        top: 100%;
+        font-size: 48px;
+    }
+    .menu__icon {
+        top: 65%;
+    }
+    .main-block__menu a:hover .menu__title {
+        font-size: 52px;
+    }
+    .menu__item {
+        position: relative;
+        padding-left: 0;
+    }
+    .menu__card {
+        height: 275px;
+    }
+    .menu__image {
+        height: 225px;
+        left: -15%;
+        top: inherit;
+        bottom: 0;
+    }
+	.menu__bg,
+	.menu__bg--weapons,
+	.menu__bg--characters,
+	.menu__bg--artifacts,
+	.menu__bg--teams {
+        position: absolute;
+        width: 100vw;
+        height: 175px;
+        bottom: 0;
+        right: 50%;
+        transform: translateX(50%);
+		border-radius: 0;
+	}
+}
+@media (max-width: 500px) {
+    .main-block__description {
+        font-size: 7px;
+        max-width: 255px;
+    }
+    .patreon__text,
+    .patreon__logo,
+    .patreon__btn {
+        margin: 20px auto;
+    }
+    .patreon__btn {
+        margin: 30px auto;
+    }
+    .menu__title {
+        top: 100%;
+        font-size: 32px;
+    }
+    .menu__icon {
+        top: 65%;
+    }
+    .main-block__menu a:hover .menu__title {
+        font-size: 34px;
+    }
+    .menu__item {
+        position: relative;
+        padding-left: 0;
+    }
+    .menu__card {
+        height: 275px;
+        width: 325px;
+    }
+    .menu__image {
+        height: 225px;
+        left: -15%;
+        top: inherit;
+        bottom: 0;
+    }
+	.menu__bg,
+	.menu__bg--weapons,
+	.menu__bg--characters,
+	.menu__bg--artifacts,
+	.menu__bg--teams {
+        position: absolute;
+        width: 100vw;
+        height: 175px;
+        bottom: 0;
+        right: 50%;
+        transform: translateX(50%);
+		border-radius: 0;
+	}
+}
+@media (max-width: 300px) {
+    .main-block__logo {
+        top: 345px;
+        font-size: 32px;
+    }
+    .main-block__description {
+        font-size: 7px;
+        width: 85vw;
+    }
+    .patreon__text,
+    .patreon__logo,
+    .patreon__btn {
+        margin: 20px auto;
+    }
+    .patreon__btn {
+        margin: 30px auto;
+    }
+    .menu__title {
+        top: 100%;
+        font-size: 32px;
+    }
+    .menu__icon {
+        top: 65%;
+    }
+    .main-block__menu a:hover .menu__title {
+        font-size: 34px;
+    }
+    .menu__item {
+        position: relative;
+        padding-left: 0;
+    }
+    .menu__card {
+        height: 275px;
+        width: 200px;
+    }
+    .menu__image {
+        height: 225px;
+        left: -15%;
+        top: inherit;
+        bottom: 0;
+    }
+	.menu__bg,
+	.menu__bg--weapons,
+	.menu__bg--characters,
+	.menu__bg--artifacts,
+	.menu__bg--teams {
+        position: absolute;
+        width: 100vw;
+        height: 175px;
+        bottom: 0;
+        right: 50%;
+        transform: translateX(50%);
+		border-radius: 0;
+	}
 }
 </style>
 

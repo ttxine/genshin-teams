@@ -106,11 +106,15 @@
               </div>
               <div class="weapon__stat stat">
                 <p class="weapon__stat">{{ weapon.sub_stat.core.stat.toUpperCase() }}:</p>
-                <p class="weapon__value">{{ Math.round(weapon.sub_stat.value) }}</p>
+                <p class="weapon__value">{{
+                  weapon.sub_stat.core.stat.includes('%')
+                    ? Math.round(weapon.sub_stat.value * 100) + '%'
+                    : Math.round(weapon.sub_stat.value)
+                }}</p>
               </div>
               <div class="weapon__stat stat">
-                <p class="stat__prop">Level:</p>
-                <p class="stat__value">{{ weapon.level }}</p>
+                <p class="stat__prop">Level/Ascension:</p>
+                <p class="stat__value">{{ weapon.level + '/' + weapon.ascension }}</p>
               </div>
               <div class="weapon__stat stat">
                 <p class="weapon__stat">Refinement:</p>
@@ -118,9 +122,14 @@
               </div>
             </div>
             <div class="weapon__image">
-              <img :src="weapon.ascension < 2 ? 'http://localhost:8000/' + weapon.core.first_ascension_image : 'http://localhost:8000/' + weapon.core.second_ascension_image" alt="weapon">
+              <img :src="weapon.ascension < 2 ? apiURL + '/' + weapon.core.first_ascension_image : apiURL + '/' + weapon.core.second_ascension_image" alt="weapon">
             </div>
           </div>
+        </div>
+        <div class="weapon__add">
+          <p @click="createModalVisible = true" class="_link _title">
+            Add Weapon +
+          </p>
         </div>
       </div>
     </div>
@@ -207,6 +216,25 @@ input[type="checkbox"] {
 	align-items: center;
 	margin: 15px;
 }
+.weapon__add {
+  position: relative;
+  width: 450px;
+  height: 176px;
+  padding: 25px 0;
+}
+.weapon__add > p {
+  cursor: pointer;
+  width: fit-content;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  text-align: center;
+  transform: translateX(-50%) translateY(-50%);
+  transition: all .25s;
+}
+.weapon__add > p:hover {
+  transform: translateX(-50%) translateY(-50%) scale(1.25);
+}
 .weapon__item,
 .weapon__item--1-star,
 .weapon__item--2-star,
@@ -241,11 +269,23 @@ input[type="checkbox"] {
 	align-items: center;
 	padding: 7px 5px;
 }
+.weapon__item--3-star,
+.weapon__header--3-star {
+  background: #86A8E7;
+  background: -webkit-linear-gradient(to right, #91EAE4, #86A8E7);
+  background: linear-gradient(to right, #91EAE4, #86A8E7);
+}
 .weapon__item--4-star,
 .weapon__header--4-star {
   background: #DA22FF;
   background: -webkit-linear-gradient(to left, #9733EE, #DA22FF);
   background: linear-gradient(to left, #9733EE, #DA22FF);
+}
+.weapon__item--5-star,
+.weapon__header--5-star {
+  background: #f46b45;
+  background: -webkit-linear-gradient(to right, #FFB75E, #f46b45);
+  background: linear-gradient(to right, #FFB75E, #f46b45);
 }
 .weapon__type {
 	filter: brightness(6.5);
@@ -259,17 +299,19 @@ input[type="checkbox"] {
 .weapon__stats {
 	flex: 0 1 225px;
 	justify-self: start;
-	padding: 10px 0;
+	padding: 10px 20px;
 	line-height: 28px;
 	font-size: 16px;
 }
 .weapon__stat {
 	display: flex;
+  flex-wrap: wrap;
 	justify-content: space-between;
 }
 .weapon__container {
 	display: flex;
 	align-items: center;
+  flex-wrap: wrap;
 	background-color: #F4F0E9;
 	box-sizing: content-box;
 }
@@ -295,6 +337,19 @@ input[type="checkbox"] {
 	max-width: 100%;
 	z-index: 2;
 }
+@media (max-width: 767.98px) {
+  .weapon__filter {
+    display: none;
+  }
+}
+@media (max-width: 429.98px) {
+  .weapon__image {
+    opacity: .5;
+  }
+  .weapon__menu {
+    display: none;
+  }
+}
 </style>
 
 <script>
@@ -306,13 +361,15 @@ export default {
       weapons: [],
       createModalVisible: false,
       detailModalVisible: false,
-      detailModalWeapon: null
+      detailModalWeapon: null,
+      apiUrl: ''
     }
   },
   components: {
     Modal
   },
-  mounted: function() {
+  mounted() {
+    this.apiURL = process.env.VUE_APP_API_PREFIX;
     this.getWeapons();
   },
   methods: {

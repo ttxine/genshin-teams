@@ -32,6 +32,7 @@
                             placeholder=""
                             id="ascension"
                             name="ascension"
+                            disabled
                         >
                     </div>
                 </div>
@@ -40,7 +41,18 @@
                         <label class="_label" for="refinement">
                             Refinement
                         </label>
-                        <input class="_level-input _input" min="1" max="90" step="1" :value="weapon.refinement" type="number" placeholder="" id="refinement" name="refinement">
+                        <input
+                            class="_level-input _input"
+                            min="1"
+                            max="6"
+                            step="1"
+                            :value="weapon.refinement"
+                            type="number"
+                            placeholder=""
+                            id="refinement"
+                            name="refinement"
+                            disabled
+                        >
                     </div>
                 </div>
             </div>
@@ -58,7 +70,11 @@
                     </div>
                     <div class="main__stat stat">
                         <p class="stat__prop">{{ weapon.sub_stat.core.stat.toUpperCase() }}:</p>
-                        <p class="stat__value">{{ Math.round(weapon.sub_stat.value) }}</p>
+                        <p class="stat__value">{{
+                            weapon.sub_stat.core.stat.includes('%')
+                                ? Math.round(weapon.sub_stat.value * 100) + '%'
+                                : Math.round(weapon.sub_stat.value)
+                        }}</p>
                     </div>
                 </div>
             </div>
@@ -74,10 +90,14 @@
 </template>
 
 <style scoped>
+:disabled {
+    opacity: .5;
+}
 .level-input__container,
 .refinement-input__container {
 	display: flex;
 	align-items: center;
+    flex-wrap: wrap;
 	padding: 5px 10px;
 	border-radius: 7px;
 	background-color: #3A3A3A;
@@ -111,8 +131,12 @@
 .ingame-item-form {
 	display: flex;
 	flex-direction: row;
+    flex-wrap: wrap;
 	padding: 7px;
 	border-bottom: solid 1px #3A3A3A;
+}
+.ingame-item-form > div {
+    padding: 5px;
 }
 .ingame-item__main > div {
 	padding: 10px 0;
@@ -122,9 +146,13 @@
 }
 .main__detail {
 	display: flex;
+    flex-wrap: wrap;
 }
 .main__detail > .main__info {
 	margin-left: 25px;
+}
+.main__description {
+    text-align: justify;
 }
 .main__image {
 	flex: 0 0 160px;
@@ -167,8 +195,12 @@ export default {
             weapon: this.detailData,
             weaponImage: null,
             level: this.detailData.level,
-            ascension: this.detailData.ascension
+            ascension: this.detailData.ascension,
+            apiURL: ''
         }
+    },
+    mounted() {
+        this.apiURL = process.env.VUE_APP_API_PREFIX;
     },
     methods: {
         async inputLevel(event) {
@@ -177,6 +209,8 @@ export default {
                 let ascension = this.ascension;
 
                 if (level == '')
+                    return;
+                else if (level < 1) 
                     level = 1
 
                 if (level <= 20) {
@@ -198,7 +232,7 @@ export default {
                     ascension = 6
                 }
 
-                const response = await axios.post('http://localhost:8000/api/v1/weapons', {
+                const response = await axios.post(this.apiURL + '/weapons', {
                     core: this.weapon.core.id,
                     level: level,
                     ascension: ascension,
@@ -232,10 +266,11 @@ export default {
         }
     },
     mounted() {
+        this.apiURL = process.env.VUE_APP_API_PREFIX;
         if (this.weapon.ascension < 2) {
-            this.weaponImage = `http://localhost:8000/${this.weapon.core.first_ascension_image}`
+            this.weaponImage = this.apiURL + `/${this.weapon.core.first_ascension_image}`
         } else {
-            this.weaponImage = `http://localhost:8000/${this.weapon.core.second_ascension_image}`
+            this.weaponImage = this.apiURL + `/${this.weapon.core.second_ascension_image}`
         }
     }
 }

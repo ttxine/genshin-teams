@@ -218,6 +218,42 @@ input {
 		font-size: 5px;
 	}
 }
+@media (max-width: 1440px) {
+	._container {
+		max-width: 1000px;
+	}
+	.main-block__logo {
+		width: fit-content;
+	}
+}
+@media (max-width: 766.98px) {
+	header {
+		display: none;
+	}
+	footer {
+		display: none;
+	}
+	._container {
+		max-width: 480px;
+		padding: 0 15px;
+	}
+	.main-block__image {
+		min-height: 350px;
+	}
+	.main-block__image img {
+		height: 500px;
+	}
+	.main-block__logo {
+		top: 340px;
+		font-size: 48px;
+	}
+	.main-block__description {
+		max-width: 175px;
+		line-height: 8px;
+		top: 380px;
+		font-size: 5px;
+	}
+}
 </style>
 
 <script>

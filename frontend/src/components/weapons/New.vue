@@ -75,8 +75,8 @@
         </form>
         <div class="core__list">
             <div v-for="core in weaponCores" @click="createWeapon(core.id);" :key="core.id" :title="core.name" class="core__item">
-                <div class="core__icon">
-                    <img :src="'http://localhost:8000/' + core.first_ascension_image">
+                <div v-bind:class="`core__icon--${core.rarity}-star`">
+                    <img :src="this.apiURL + '/' + core.first_ascension_image">
                 </div>
                 <div class="core__rarity">
                     <img :src="require(`@/assets/img/icons/rarity/rarity-${core.rarity}.png`)">
@@ -175,16 +175,38 @@ input[type="checkbox"] {
 .core__item:hover {
 	transform: scale(1.05);
 }
-.core__icon {
+.core__icon,
+.core__icon--1-star,
+.core__icon--2-star,
+.core__icon--3-star,
+.core__icon--4-star,
+.core__icon--5-star {
 	position: relative;
 	overflow: hidden;
 	height: 110px;
 	border-radius: 0 0 20px 0;
-	background: #DA22FF;  /* fallback for old browsers */
-	background: -webkit-linear-gradient(to left, #9733EE, #DA22FF);  /* Chrome 10-25, Safari 5.1-6 */
-	background: linear-gradient(to left, #9733EE, #DA22FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
 }
-.core__icon img {
+.core__icon--3-star {
+  background: #86A8E7;
+  background: -webkit-linear-gradient(to right, #91EAE4, #86A8E7);
+  background: linear-gradient(to right, #91EAE4, #86A8E7);
+}
+.core__icon--4-star {
+  background: #DA22FF;
+  background: -webkit-linear-gradient(to left, #9733EE, #DA22FF);
+  background: linear-gradient(to left, #9733EE, #DA22FF);
+}
+.core__icon--5-star {
+  background: #f46b45;
+  background: -webkit-linear-gradient(to right, #FFB75E, #f46b45);
+  background: linear-gradient(to right, #FFB75E, #f46b45);
+}
+.core__icon img,
+.core__icon--1-star img,
+.core__icon--2-star img,
+.core__icon--3-star img,
+.core__icon--4-star img,
+.core__icon--5-star img {
 	position: absolute;
 	max-width: 160px;
 	height: 160px;
@@ -203,6 +225,11 @@ input[type="checkbox"] {
 	transform: translateX(-50%) translateY(-50%) scale(1);
 	filter: drop-shadow(0 0 2px rgba(58, 58, 58, 0.75));
 }
+@media (max-width: 767.98px) {
+  .weapon__filter {
+    display: none;
+  }
+}
 </style>
 
 <script>
@@ -211,16 +238,21 @@ import axios from 'axios'
 export default {
     data() {
         return {
+            apiURL: '',
             weaponCores: []
         }
     },
     mounted() {
+        this.apiURL = process.env.VUE_APP_API_PREFIX;
         this.fetchWeaponCores();
     },
     methods: {
         async fetchWeaponCores() {
             try {
-                const response = await axios.get('http://localhost:8000/api/v1/weapon-cores?weapon_types=sw&weapon_types=cl&weapon_types=po&weapon_types=ca&weapon_types=bo&rarities=1&rarities=2&rarities=3&rarities=4&rarities=5');
+                const response = await axios.get(this.apiURL
+                    + '/weapon-cores?weapon_types=sw&weapon_types=cl&weapon_ty'
+                    + 'pes=po&weapon_types=ca&weapon_types=bo&rarities=1&rarit'
+                    + 'ies=2&rarities=3&rarities=4&rarities=5');
                 this.weaponCores = response['data'];
             }
             catch (e) {
@@ -228,7 +260,7 @@ export default {
             }
         },
         async createWeapon(core) {
-            await axios.post('http://localhost:8000/api/v1/weapons', {
+            await axios.post(this.apiURL + '/weapons', {
                 core: core,
                 level: 1,
                 ascension: 0,
