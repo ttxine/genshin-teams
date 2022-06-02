@@ -58,7 +58,7 @@
             </div>
         </form>
         <div class="main__detail">
-            <div class="main__image">
+            <div v-bind:class="`main__image--${weapon.core.rarity}-star`">
                 <img :src="weaponImage" alt="weapon">
             </div>
             <div class="main__info">
@@ -154,16 +154,31 @@
 .main__description {
     text-align: justify;
 }
-.main__image {
+.main__image,
+.main__image--3-star,
+.main__image--4-star,
+.main__image--5-star {
 	flex: 0 0 160px;
 	position: relative;
 	width: 160px;
 	height: 160px;
 	overflow: hidden;
 	border-radius: 10px;
-	background: #DA22FF;  /* fallback for old browsers */
-	background: -webkit-linear-gradient(to left, #9733EE, #DA22FF);  /* Chrome 10-25, Safari 5.1-6 */
-	background: linear-gradient(to left, #9733EE, #DA22FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+.main__image--3-star {
+  background: #86A8E7;
+  background: -webkit-linear-gradient(to right, #91EAE4, #86A8E7);
+  background: linear-gradient(to right, #91EAE4, #86A8E7);
+}
+.main__image--4-star {
+  background: #DA22FF;
+  background: -webkit-linear-gradient(to left, #9733EE, #DA22FF);
+  background: linear-gradient(to left, #9733EE, #DA22FF);
+}
+.main__image--5-star {
+  background: #f46b45;
+  background: -webkit-linear-gradient(to right, #FFB75E, #f46b45);
+  background: linear-gradient(to right, #FFB75E, #f46b45);
 }
 .main__image img {
 	position: absolute;

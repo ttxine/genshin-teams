@@ -70,10 +70,13 @@
 	justify-content: space-between;
 	border-bottom: solid 1px #B2B2B2;
 }
+.footer__item {
+  margin: 5px 0;
+}
 .footer__item ul > li {
 	margin: 5px 0;
-	width:fit-content;
-	width: -moz-fit-content;
+	width: fit-content;
+  width: -moz-fit-content;
 }
 .footer__item ul > li::after {
 	background-color: #3A3A3A;
@@ -84,6 +87,12 @@
 .footer__version {
 	position: absolute;
 	right: 20px;
+}
+
+@media (max-width: 766.98px) {
+  .footer__list {
+    flex-wrap: wrap;
+  }
 }
 </style>
 

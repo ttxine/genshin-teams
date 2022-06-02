@@ -227,12 +227,6 @@ input {
 	}
 }
 @media (max-width: 766.98px) {
-	header {
-		display: none;
-	}
-	footer {
-		display: none;
-	}
 	._container {
 		max-width: 480px;
 		padding: 0 15px;

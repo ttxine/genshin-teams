@@ -384,7 +384,7 @@
 		border-radius: 0;
 	}
 }
-@media (max-width: 300px) {
+@media (max-width: 324.98px) {
     .main-block__logo {
         top: 345px;
         font-size: 32px;
